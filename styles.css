@@ -139,9 +139,13 @@ th{
 }
 
 .checkboxes{
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap:6px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.checkboxes label{
+  align-items:flex-start;
 }
 
 .sr{
