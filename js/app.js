@@ -30,8 +30,14 @@ async function handleGenerate() {
 
     const lessons = await fetchLessons();
     const visits = generateVisits(selection.pacing, selection.definedPref, selection.birth, selection.first);
-    const queue = filterLessons(lessons, selection);
-    const rows = assignLessons(visits, selection.birth, queue);
+    const participant = {
+      birth: selection.birth,
+      isFirstTimeParent: selection.isFTP,
+      isPregnant: selection.isPregnant,
+      topics: selection.topics,
+    };
+    const queue = filterLessons(lessons, participant);
+    const rows = assignLessons(visits, participant, queue);
 
     updateSchedule(rows, visits.length, selection.pid);
     setStatus('');

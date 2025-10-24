@@ -1,19 +1,82 @@
-export function filterLessons(allLessons, selection) {
-  return allLessons
-    .filter((lesson) => {
-      const passFoundation = !lesson.foundation || true;
-      const passFTP = !lesson.firstTimeParent || selection.isFTP;
-      const passPreg = !lesson.pregnant || selection.isPregnant;
+const YES = 'yes';
 
-      const topics = selection.topics;
-      const passTopic =
-        (!topics.cfw && !lesson.caregiverWellbeing ? true : topics.cfw || !lesson.caregiverWellbeing) &&
-        (!topics.fp && !lesson.familyPlanning ? true : topics.fp || !lesson.familyPlanning) &&
-        (!topics.nutrition && !lesson.nutrition ? true : topics.nutrition || !lesson.nutrition) &&
-        (!topics.sti && !lesson.sti ? true : topics.sti || !lesson.sti) &&
-        (!topics.substance && !lesson.substanceUse ? true : topics.substance || !lesson.substanceUse);
-
-      return passFoundation && passFTP && passPreg && passTopic;
-    })
-    .sort((a, b) => (a.seqAge ?? 999) - (b.seqAge ?? 999));
+function toBool(value) {
+  if (typeof value === 'string') {
+    return value.trim().toLowerCase() === YES;
+  }
+  return Boolean(value);
 }
+
+function getLessonAgeRange(lesson) {
+  const start = Number.isFinite(lesson?.seqAge) ? lesson.seqAge : 0;
+  const end = Number.isFinite(lesson?.upToAge) ? lesson.upToAge : 36;
+  return { start, end };
+}
+
+export function isLessonRelevant(lesson, participant, topics) {
+  const foundation = toBool(lesson?.foundation);
+  if (foundation) {
+    return true;
+  }
+
+  const isFirstTimeParent = Boolean(participant?.isFirstTimeParent);
+  const isPregnant = Boolean(participant?.isPregnant);
+
+  if (isFirstTimeParent && toBool(lesson?.firstTimeParent)) {
+    return true;
+  }
+
+  if (isPregnant && toBool(lesson?.pregnant)) {
+    return true;
+  }
+
+  const topicSelections = topics ?? {};
+
+  if (topicSelections.cfw && toBool(lesson?.caregiverWellbeing)) {
+    return true;
+  }
+
+  if (topicSelections.fp && toBool(lesson?.familyPlanning)) {
+    return true;
+  }
+
+  if (topicSelections.nutrition && toBool(lesson?.nutrition)) {
+    return true;
+  }
+
+  if (topicSelections.sti && toBool(lesson?.sti)) {
+    return true;
+  }
+
+  if (topicSelections.substance && toBool(lesson?.substanceUse)) {
+    return true;
+  }
+
+  return false;
+}
+
+export function shouldPull(lesson, participant, topics, childAgeM) {
+  if (!isLessonRelevant(lesson, participant, topics)) {
+    return false;
+  }
+
+  const { start, end } = getLessonAgeRange(lesson);
+
+  if (!participant?.isPregnant && start < 0) {
+    return false;
+  }
+
+  return childAgeM >= start && childAgeM <= end;
+}
+
+export function filterLessons(allLessons, participant) {
+  return allLessons
+    .filter((lesson) => isLessonRelevant(lesson, participant, participant?.topics))
+    .sort((a, b) => {
+      const { start: startA } = getLessonAgeRange(a);
+      const { start: startB } = getLessonAgeRange(b);
+      return startA - startB;
+    });
+}
+
+export { getLessonAgeRange };
