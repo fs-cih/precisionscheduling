@@ -52,6 +52,9 @@
         <option value="no">No</option>
         <option value="yes">Yes</option>
       </select>
+
+      <label for="dueDate" id="dueDateLabel" style="display:none;">Due Date</label>
+      <input id="dueDate" type="text" inputmode="numeric" pattern="\d{2}/\d{2}/\d{4}" placeholder="mm/dd/yyyy" style="display:none;" disabled>
     </div>
   </div>
 
@@ -64,12 +67,9 @@
 
       <label for="birthDate">Birth date of youngest child:</label>
       <input id="birthDate" type="date">
-
-      <label for="anticipatedBirth">If prenatal, input anticipated birthdate of youngest child.</label>
-      <input id="anticipatedBirth" type="date">
     </div>
     <div class="muted" style="margin-top:8px;">
-      Tip: If the participant is pregnant, use <b>Anticipated birthdate</b>. Otherwise use <b>Birth date</b>.
+      Tip: If the participant is pregnant, use <b>Due Date</b>. Otherwise use <b>Birth date</b>.
     </div>
   </div>
 

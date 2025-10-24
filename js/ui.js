@@ -4,7 +4,8 @@ const pacingEl = document.getElementById('pacing');
 const definedEl = document.getElementById('definedPref');
 const birthEl = document.getElementById('birthDate');
 const pregEl = document.getElementById('pregnant');
-const anticipatedEl = document.getElementById('anticipatedBirth');
+const dueDateEl = document.getElementById('dueDate');
+const dueDateLabel = document.getElementById('dueDateLabel');
 const ageLabel = document.getElementById('ageLabel');
 const statusEl = document.getElementById('status');
 
@@ -13,11 +14,30 @@ function updateDefinedState() {
   definedEl.disabled = pacingEl.value !== 'defined';
 }
 
+function updateDueDateState() {
+  if (!dueDateEl || !dueDateLabel) return;
+
+  const isPregnant = pregEl?.value === 'yes';
+
+  if (isPregnant) {
+    dueDateEl.disabled = false;
+    dueDateEl.required = true;
+    dueDateEl.style.display = '';
+    dueDateLabel.style.display = '';
+  } else {
+    dueDateEl.value = '';
+    dueDateEl.disabled = true;
+    dueDateEl.required = false;
+    dueDateEl.style.display = 'none';
+    dueDateLabel.style.display = 'none';
+  }
+}
+
 function updateAgeLabel() {
   if (!ageLabel) return;
 
   const isPregnant = pregEl?.value === 'yes';
-  const birth = parseDate(isPregnant ? anticipatedEl?.value : birthEl?.value);
+  const birth = parseDate(isPregnant ? dueDateEl?.value : birthEl?.value);
 
   if (!birth) {
     ageLabel.textContent = '—';
@@ -31,13 +51,19 @@ function updateAgeLabel() {
 
 export function initUI() {
   updateDefinedState();
+  updateDueDateState();
   updateAgeLabel();
 
   pacingEl?.addEventListener('change', () => {
     updateDefinedState();
   });
 
-  [pregEl, birthEl, anticipatedEl].forEach((el) => {
+  pregEl?.addEventListener('change', () => {
+    updateDueDateState();
+    updateAgeLabel();
+  });
+
+  [birthEl, dueDateEl].forEach((el) => {
     el?.addEventListener('change', updateAgeLabel);
   });
 }
@@ -46,7 +72,7 @@ export function readSelections() {
   const isFTP = document.getElementById('ftp')?.value === 'yes';
   const isPregnant = pregEl?.value === 'yes';
 
-  const birth = parseDate(isPregnant ? anticipatedEl?.value : birthEl?.value);
+  const birth = parseDate(isPregnant ? dueDateEl?.value : birthEl?.value);
   const first = parseDate(document.getElementById('firstLesson')?.value);
 
   return {
