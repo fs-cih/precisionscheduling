@@ -1,0 +1,85 @@
+import { fmtDate } from './dates.js';
+
+const scheduleBody = document.getElementById('scheduleBody');
+const resultsCard = document.getElementById('resultsCard');
+const summaryEl = document.getElementById('summary');
+const exportBtn = document.getElementById('exportBtn');
+
+function download(filename, text) {
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function renderRows(rows) {
+  scheduleBody.innerHTML = '';
+
+  let currentVisit = null;
+  let visitTotal = 0;
+
+  rows.forEach((row, index) => {
+    const tr = document.createElement('tr');
+    const isLastOfVisit = index === rows.length - 1 || rows[index + 1].visit !== row.visit;
+
+    visitTotal = currentVisit === row.visit ? visitTotal + row.minutes : row.minutes;
+    currentVisit = row.visit;
+
+    const tdVisit = document.createElement('td');
+    tdVisit.textContent = row.visit;
+    const tdDate = document.createElement('td');
+    tdDate.textContent = fmtDate(row.date);
+    const tdAge = document.createElement('td');
+    tdAge.textContent = row.ageM < 0 ? 'Prenatal' : row.ageM;
+    const tdCode = document.createElement('td');
+    tdCode.textContent = row.code;
+    const tdSubject = document.createElement('td');
+    tdSubject.textContent = row.subject;
+    const tdMinutes = document.createElement('td');
+    tdMinutes.textContent = row.minutes;
+    const tdTotal = document.createElement('td');
+    tdTotal.textContent = isLastOfVisit ? visitTotal : '';
+
+    tr.append(tdVisit, tdDate, tdAge, tdCode, tdSubject, tdMinutes, tdTotal);
+    scheduleBody.appendChild(tr);
+
+    if (isLastOfVisit) {
+      visitTotal = 0;
+    }
+  });
+
+  resultsCard.style.display = rows.length ? 'block' : 'none';
+}
+
+function buildCsv(rows, pid) {
+  const header = ['Participant ID', 'Visit #', 'Visit Date', 'Child Age (months)', 'Lesson Code', 'Lesson Subject', 'Minutes'];
+  const lines = [header.join(',')];
+
+  rows.forEach((row) => {
+    const age = row.ageM < 0 ? 'Prenatal' : row.ageM;
+    const subject = `"${row.subject.replace(/"/g, '""')}"`;
+    lines.push([pid, row.visit, fmtDate(row.date), age, row.code, subject, row.minutes].join(','));
+  });
+
+  return lines.join('\n');
+}
+
+export function updateSchedule(rows, visitsCount, pid) {
+  renderRows(rows);
+
+  const summaryText = rows.length
+    ? `Generated ${rows.length} lesson rows. (Visits created: ${visitsCount}).`
+    : `No lessons placed. (Visits created: ${visitsCount}).`;
+  summaryEl.textContent = summaryText;
+
+  if (rows.length) {
+    exportBtn.disabled = false;
+    exportBtn.onclick = () => download('schedule.csv', buildCsv(rows, pid));
+  } else {
+    exportBtn.disabled = true;
+    exportBtn.onclick = null;
+  }
+}
