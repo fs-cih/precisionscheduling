@@ -39,7 +39,7 @@
 
   <!-- Participant Information -->
   <div class="card">
-    <div class="section-title">Participant Information</div>
+    <div class="section-title">Participant (Primary Adult) Information</div>
     <div class="grid">
       <label for="ftp">Is the participant a first time parent?</label>
       <select id="ftp">
@@ -53,8 +53,8 @@
         <option value="yes">Yes</option>
       </select>
 
-      <label for="dueDate" id="dueDateLabel" style="display:none;">Due Date</label>
-      <input id="dueDate" type="text" inputmode="numeric" pattern="\d{2}/\d{2}/\d{4}" placeholder="mm/dd/yyyy" style="display:none;" disabled>
+      <label for="dueDate">Due Date:</label>
+      <input id="dueDate" type="text" inputmode="numeric" pattern="\d{2}/\d{2}/\d{4}" placeholder="MM/DD/YYYY" disabled>
     </div>
   </div>
 
@@ -62,14 +62,8 @@
   <div class="card">
     <div class="section-title">Child Information</div>
     <div class="grid">
-      <label>Age of youngest child:</label>
-      <div id="ageLabel" class="pill">—</div>
-
       <label for="birthDate">Birth date of youngest child:</label>
       <input id="birthDate" type="date">
-    </div>
-    <div class="muted" style="margin-top:8px;">
-      Tip: If the participant is pregnant, use <b>Due Date</b>. Otherwise use <b>Birth date</b>.
     </div>
   </div>
 
