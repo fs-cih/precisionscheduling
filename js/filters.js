@@ -81,14 +81,29 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
   return meetsLowerBound;
 }
 
-export function filterLessons(allLessons, participant) {
-  return allLessons
-    .filter((lesson) => isLessonRelevant(lesson, participant, participant?.topics))
+export function filterLessons(allLessons, participant, skipList = []) {
+  const skipSet = new Set(
+    (skipList ?? []).map((code) => (code ?? '').toString().trim().toUpperCase()).filter(Boolean),
+  );
+  let skippedCount = 0;
+
+  const lessons = allLessons
+    .filter((lesson) => {
+      const lessonCode = (lesson?.code ?? '').toString().trim().toUpperCase();
+      if (lessonCode && skipSet.has(lessonCode)) {
+        skippedCount += 1;
+        return false;
+      }
+
+      return isLessonRelevant(lesson, participant, participant?.topics);
+    })
     .sort((a, b) => {
       const { start: startA } = getLessonAgeRange(a);
       const { start: startB } = getLessonAgeRange(b);
       return startA - startB;
     });
+
+  return { lessons, skippedCount };
 }
 
 export { getLessonAgeRange };

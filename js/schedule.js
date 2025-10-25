@@ -70,7 +70,7 @@ function buildCsv(rows, pid) {
   return lines.join('\n');
 }
 
-export function updateSchedule(schedule, pid) {
+export function updateSchedule(schedule, pid, skippedCount = 0) {
   const {
     rows = [],
     totalVisits = 0,
@@ -102,6 +102,11 @@ export function updateSchedule(schedule, pid) {
     summaryText = totalVisits
       ? `No lessons could be scheduled. Planned visits: ${totalVisits}.`
       : 'No lessons could be scheduled.';
+  }
+
+  if (skippedCount > 0) {
+    const skippedWord = skippedCount === 1 ? 'lesson' : 'lessons';
+    summaryText += ` Excluded ${skippedCount} ${skippedWord} marked as completed.`;
   }
 
   if (summaryEl) {

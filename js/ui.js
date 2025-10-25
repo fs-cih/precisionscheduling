@@ -7,6 +7,14 @@ const birthEl = document.getElementById('birthDate');
 const pregEl = document.getElementById('pregnant');
 const dueDateEl = document.getElementById('dueDate');
 const statusEl = document.getElementById('status');
+const skipLessonsEl = document.getElementById('skipLessons');
+
+function parseSkipList(input = '') {
+  return input
+    .split(/[\s,]+/)
+    .map((code) => code.trim().toUpperCase())
+    .filter(Boolean);
+}
 
 function updateDefinedState() {
   if (!pacingEl || !definedEl) return;
@@ -60,6 +68,7 @@ export function resetForm() {
 
   if (birthEl) birthEl.value = '';
   if (dueDateEl) dueDateEl.value = '';
+  if (skipLessonsEl) skipLessonsEl.value = '';
 
   const topicIds = ['topic_cfw', 'topic_fp', 'topic_nutrition', 'topic_sti', 'topic_substance'];
   topicIds.forEach((id) => {
@@ -87,6 +96,7 @@ export function readSelections() {
     agePriority: agePriorityEl?.value ?? 'standard',
     birth,
     first,
+    skipLessons: parseSkipList(skipLessonsEl?.value ?? ''),
     topics: {
       cfw: Boolean(document.getElementById('topic_cfw')?.checked),
       fp: Boolean(document.getElementById('topic_fp')?.checked),

@@ -37,11 +37,16 @@ async function handleGenerate() {
       pacing: selection.pacing,
       agePriority: selection.agePriority,
       topics: selection.topics,
+      skipLessons: selection.skipLessons,
     };
-    const queue = filterLessons(lessons, participant);
+    const { lessons: queue, skippedCount } = filterLessons(
+      lessons,
+      participant,
+      selection.skipLessons,
+    );
     const schedule = assignLessons(visits, participant, queue);
 
-    updateSchedule(schedule, selection.pid);
+    updateSchedule(schedule, selection.pid, skippedCount);
     setStatus('');
   } catch (error) {
     console.error(error);
