@@ -141,7 +141,7 @@ async function populateCompletedLessons() {
 
       const option = document.createElement('option');
       option.value = lesson.code;
-      option.textContent = `${lesson.code} — ${lesson.subject}`;
+      option.textContent = `${lesson.subject} (${lesson.code})`;
       completedLessonsEl.appendChild(option);
     });
   } catch (error) {
