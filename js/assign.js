@@ -18,12 +18,12 @@ export function assignLessons(visits, participant, lessons) {
     (participant?.pacing ?? 'standard') === 'standard' &&
     (participant?.agePriority ?? 'standard') === 'standard';
 
-  for (let visitIndex = 0; visitIndex < visits.length; visitIndex += 1) {
+  for (let visitIndex = visits.length - 1; visitIndex >= 0; visitIndex -= 1) {
     const visitDate = visits[visitIndex];
     const childAgeM = monthsBetween(participant.birth, visitDate);
     const isFinalVisit = visitIndex === finalVisitIndex;
     const reservedMinutes = isFinalVisit && finalLesson ? finalLesson.minutes : 0;
-    const visitCapacity = Math.max(0, 120 - reservedMinutes);
+    const visitCapacity = Math.max(0, 90 - reservedMinutes);
     const baseMaxLessons = singleLessonVisits ? 1 : 3;
     const maxLessons = isFinalVisit && finalLesson
       ? (singleLessonVisits ? 1 : 2)
@@ -31,22 +31,24 @@ export function assignLessons(visits, participant, lessons) {
 
     const visitRows = [];
     let totalMinutes = 0;
-    let searchIndex = 0;
+    let searchIndex = availableLessons.length - 1;
 
-    while (visitRows.length < maxLessons && searchIndex < availableLessons.length) {
+    while (visitRows.length < maxLessons && searchIndex >= 0) {
       const lesson = availableLessons[searchIndex];
       const { start } = getLessonAgeRange(lesson);
 
       if (!shouldPull(lesson, participant, topics, childAgeM)) {
         if (childAgeM < start) {
-          break;
+          searchIndex -= 1;
+          continue;
         }
         availableLessons.splice(searchIndex, 1);
+        searchIndex -= 1;
         continue;
       }
 
       if (totalMinutes + lesson.minutes > visitCapacity) {
-        searchIndex += 1;
+        searchIndex -= 1;
         continue;
       }
 
@@ -61,6 +63,7 @@ export function assignLessons(visits, participant, lessons) {
 
       totalMinutes += lesson.minutes;
       availableLessons.splice(searchIndex, 1);
+      searchIndex -= 1;
     }
 
     if (isFinalVisit && finalLesson) {
