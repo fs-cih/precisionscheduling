@@ -40,6 +40,34 @@ export function initUI() {
   });
 }
 
+export function resetForm() {
+  const pidEl = document.getElementById('pid');
+  if (pidEl) pidEl.value = '';
+
+  const firstLessonEl = document.getElementById('firstLesson');
+  if (firstLessonEl) firstLessonEl.value = '';
+
+  if (pacingEl) pacingEl.value = 'standard';
+  if (definedEl) definedEl.value = '';
+
+  const ftpEl = document.getElementById('ftp');
+  if (ftpEl) ftpEl.value = 'no';
+
+  if (pregEl) pregEl.value = 'no';
+
+  if (birthEl) birthEl.value = '';
+  if (dueDateEl) dueDateEl.value = '';
+
+  const topicIds = ['topic_cfw', 'topic_fp', 'topic_nutrition', 'topic_sti', 'topic_substance'];
+  topicIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+
+  updateDefinedState();
+  updateDueDateState();
+}
+
 export function readSelections() {
   const isFTP = document.getElementById('ftp')?.value === 'yes';
   const isPregnant = pregEl?.value === 'yes';
