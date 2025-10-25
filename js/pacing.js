@@ -1,11 +1,10 @@
 import { addDays, addMonths } from './dates.js';
 
 export function generateVisits(pacing, definedPref, birth, first) {
-  const end = new Date(birth);
-  end.setMonth(end.getMonth() + 36);
+  const thirdBirthday = addMonths(birth, 36);
 
-  const visits = [];
-  let current = new Date(first);
+  const visits = [new Date(thirdBirthday)];
+  let current = new Date(thirdBirthday);
 
   const postpartum3 = addMonths(birth, 3);
   const postpartum6 = addMonths(birth, 6);
@@ -33,20 +32,46 @@ export function generateVisits(pacing, definedPref, birth, first) {
     return 60;
   };
 
-  while (current <= end) {
-    visits.push(new Date(current));
-    const step = stepFor(current);
-    current = addDays(current, step);
-  }
-
-  if (pacing !== 'defined') {
-    const thirdBirthday = new Date(birth);
-    thirdBirthday.setMonth(thirdBirthday.getMonth() + 36);
-    const lastVisit = visits[visits.length - 1];
-    if (!lastVisit || lastVisit.getTime() !== thirdBirthday.getTime()) {
-      visits.push(thirdBirthday);
+  if (pacing === 'defined') {
+    const step = stepFor(first);
+    if (Number.isFinite(step) && step > 0) {
+      while (true) {
+        const candidate = addDays(current, -step);
+        if (candidate.getTime() < first.getTime()) {
+          break;
+        }
+        visits.push(new Date(candidate));
+        current = candidate;
+      }
+    }
+  } else {
+    const candidateSteps = [7, 14, 30, 60];
+    while (current.getTime() > first.getTime()) {
+      let matched = false;
+      for (const step of candidateSteps) {
+        const candidate = addDays(current, -step);
+        if (candidate.getTime() < first.getTime()) {
+          continue;
+        }
+        if (stepFor(candidate) === step) {
+          visits.push(new Date(candidate));
+          current = candidate;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        break;
+      }
     }
   }
+
+  const includeFirst = visits.some((visit) => visit.getTime() === first.getTime());
+  if (!includeFirst) {
+    visits.push(new Date(first));
+  }
+
+  visits.sort((a, b) => a.getTime() - b.getTime());
 
   return visits;
 }
