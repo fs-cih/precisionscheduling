@@ -58,7 +58,7 @@ export function resetForm() {
   if (pacingEl) pacingEl.value = 'standard';
   if (definedEl) definedEl.value = '';
 
-  if (maxLessonsEl) maxLessonsEl.value = '3';
+  if (maxLessonsEl) maxLessonsEl.value = '1';
 
   const ftpEl = document.getElementById('ftp');
   if (ftpEl) ftpEl.value = 'no';
@@ -91,7 +91,7 @@ export function readSelections() {
   const birth = parseDate(isPregnant ? dueDateEl?.value : birthEl?.value);
   const first = parseDate(document.getElementById('firstLesson')?.value);
   const parsedLimit = Number.parseInt(maxLessonsEl?.value ?? '', 10);
-  const maxLessonsPerVisit = Number.isNaN(parsedLimit) ? 3 : Math.max(1, parsedLimit);
+  const maxLessonsPerVisit = Number.isNaN(parsedLimit) ? 1 : Math.max(1, parsedLimit);
 
   return {
     pid: document.getElementById('pid')?.value.trim() ?? '',
