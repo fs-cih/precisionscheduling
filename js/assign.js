@@ -78,7 +78,15 @@ export function assignLessons(visits, participant, lessons) {
     }
 
     if (!visitRows.length) {
-      continue;
+      visitRows.push({
+        visit: visitIndex + 1,
+        date: visitDate,
+        ageM: childAgeM,
+        code: 'No lesson scheduled',
+        subject: 'No lesson scheduled',
+        minutes: 0,
+        placeholder: true,
+      });
     }
 
     rows.push(...visitRows);
@@ -100,6 +108,9 @@ export function assignLessons(visits, participant, lessons) {
   }
 
   const uniqueVisitCount = new Set(rows.map((row) => row.date.getTime())).size;
+  const placeholderVisitCount = new Set(
+    rows.filter((row) => row.placeholder).map((row) => row.date.getTime()),
+  ).size;
   const scheduledFinal = finalLesson ? rows.some((row) => row.code === finalLesson.code) : false;
 
   return {
@@ -107,6 +118,6 @@ export function assignLessons(visits, participant, lessons) {
     visitsUsed: uniqueVisitCount,
     totalVisits: visits.length,
     overflowCount: availableLessons.length + (finalLesson && !scheduledFinal ? 1 : 0),
-    removedVisits: Math.max(0, visits.length - uniqueVisitCount),
+    removedVisits: placeholderVisitCount,
   };
 }
