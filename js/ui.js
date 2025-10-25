@@ -1,6 +1,7 @@
 import { parseDate } from './dates.js';
 
 const pacingEl = document.getElementById('pacing');
+const agePriorityEl = document.getElementById('agePriority');
 const definedEl = document.getElementById('definedPref');
 const birthEl = document.getElementById('birthDate');
 const pregEl = document.getElementById('pregnant');
@@ -47,6 +48,8 @@ export function resetForm() {
   const firstLessonEl = document.getElementById('firstLesson');
   if (firstLessonEl) firstLessonEl.value = '';
 
+  if (agePriorityEl) agePriorityEl.value = 'standard';
+
   if (pacingEl) pacingEl.value = 'standard';
   if (definedEl) definedEl.value = '';
 
@@ -81,6 +84,7 @@ export function readSelections() {
     definedPref: definedEl?.value || null,
     isFTP: Boolean(isFTP),
     isPregnant: Boolean(isPregnant),
+    agePriority: agePriorityEl?.value ?? 'standard',
     birth,
     first,
     topics: {
