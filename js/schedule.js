@@ -5,6 +5,11 @@ const resultsCard = document.getElementById('resultsCard');
 const summaryEl = document.getElementById('summary');
 const exportBtn = document.getElementById('exportBtn');
 
+function resetExport() {
+  exportBtn.disabled = true;
+  exportBtn.onclick = null;
+}
+
 function download(filename, text) {
   const blob = new Blob([text], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
@@ -79,7 +84,21 @@ export function updateSchedule(rows, visitsCount, pid) {
     exportBtn.disabled = false;
     exportBtn.onclick = () => download('schedule.csv', buildCsv(rows, pid));
   } else {
-    exportBtn.disabled = true;
-    exportBtn.onclick = null;
+    resetExport();
+  }
+}
+
+export function clearSchedule() {
+  if (scheduleBody) {
+    scheduleBody.innerHTML = '';
+  }
+  if (resultsCard) {
+    resultsCard.style.display = 'none';
+  }
+  if (summaryEl) {
+    summaryEl.textContent = '';
+  }
+  if (exportBtn) {
+    resetExport();
   }
 }

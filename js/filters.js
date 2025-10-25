@@ -66,6 +66,10 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
     return false;
   }
 
+  if (participant?.pacing === 'standard') {
+    return childAgeM >= start;
+  }
+
   return childAgeM >= start && childAgeM <= end;
 }
 

@@ -3,18 +3,29 @@ import { getLessonAgeRange, shouldPull } from './filters.js';
 
 export function assignLessons(visits, participant, lessons) {
   const rows = [];
+  const availableLessons = Array.isArray(lessons) ? [...lessons] : [];
   let lessonIndex = 0;
 
   const topics = participant?.topics ?? {};
+  const finalVisitIndex = visits.length - 1;
+  const finalLessonIndex = availableLessons.findIndex((lesson) => lesson.code === 'YGC11');
+  let finalLesson = null;
 
-  for (let visitIndex = 0; visitIndex < visits.length && lessonIndex < lessons.length; visitIndex += 1) {
+  if (finalLessonIndex >= 0) {
+    [finalLesson] = availableLessons.splice(finalLessonIndex, 1);
+  }
+
+  for (let visitIndex = 0; visitIndex < visits.length && lessonIndex < availableLessons.length; visitIndex += 1) {
     const visitDate = visits[visitIndex];
     const childAgeM = monthsBetween(participant.birth, visitDate);
     let totalMinutes = 0;
     let lessonCount = 0;
+    const isFinalVisit = visitIndex === finalVisitIndex;
+    const reservedMinutes = isFinalVisit && finalLesson ? finalLesson.minutes : 0;
+    const visitCapacity = Math.max(0, 120 - reservedMinutes);
 
-    while (lessonIndex < lessons.length && lessonCount < 3) {
-      const lesson = lessons[lessonIndex];
+    while (lessonIndex < availableLessons.length && lessonCount < 3) {
+      const lesson = availableLessons[lessonIndex];
       const { start } = getLessonAgeRange(lesson);
 
       if (!shouldPull(lesson, participant, topics, childAgeM)) {
@@ -25,7 +36,7 @@ export function assignLessons(visits, participant, lessons) {
         continue;
       }
 
-      const fitsTime = (totalMinutes + lesson.minutes) <= 120;
+      const fitsTime = (totalMinutes + lesson.minutes) <= visitCapacity;
 
       if (!fitsTime) {
         break;
@@ -47,8 +58,8 @@ export function assignLessons(visits, participant, lessons) {
 
     if (lessonCount === 0) {
       let scheduledLongLesson = false;
-      while (lessonIndex < lessons.length) {
-        const lesson = lessons[lessonIndex];
+      while (lessonIndex < availableLessons.length) {
+        const lesson = availableLessons[lessonIndex];
         const { start } = getLessonAgeRange(lesson);
 
         if (!shouldPull(lesson, participant, topics, childAgeM)) {
@@ -59,7 +70,7 @@ export function assignLessons(visits, participant, lessons) {
           continue;
         }
 
-        if (lesson.minutes > 120) {
+        if (lesson.minutes > 120 && (!isFinalVisit || reservedMinutes === 0)) {
           rows.push({
             visit: visitIndex + 1,
             date: visitDate,
@@ -74,10 +85,23 @@ export function assignLessons(visits, participant, lessons) {
         break;
       }
 
-      if (!scheduledLongLesson && lessonIndex >= lessons.length) {
+      if (!scheduledLongLesson && lessonIndex >= availableLessons.length) {
         break;
       }
     }
+  }
+
+  if (finalLesson && visits.length) {
+    const visitDate = visits[finalVisitIndex];
+    const childAgeM = monthsBetween(participant.birth, visitDate);
+    rows.push({
+      visit: finalVisitIndex + 1,
+      date: visitDate,
+      ageM: childAgeM,
+      code: finalLesson.code,
+      subject: finalLesson.subject,
+      minutes: finalLesson.minutes,
+    });
   }
 
   return rows;

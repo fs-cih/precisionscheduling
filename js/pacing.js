@@ -35,5 +35,12 @@ export function generateVisits(pacing, definedPref, birth, first) {
     current = addDays(current, step);
   }
 
+  const thirdBirthday = new Date(birth);
+  thirdBirthday.setMonth(thirdBirthday.getMonth() + 36);
+  const lastVisit = visits[visits.length - 1];
+  if (!lastVisit || lastVisit.getTime() !== thirdBirthday.getTime()) {
+    visits.push(thirdBirthday);
+  }
+
   return visits;
 }

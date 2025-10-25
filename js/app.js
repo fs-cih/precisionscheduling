@@ -1,8 +1,8 @@
-import { initUI, readSelections, setStatus } from './ui.js';
+import { initUI, readSelections, resetForm, setStatus } from './ui.js';
 import { generateVisits } from './pacing.js';
 import { filterLessons } from './filters.js';
 import { assignLessons } from './assign.js';
-import { updateSchedule } from './schedule.js';
+import { clearSchedule, updateSchedule } from './schedule.js';
 
 let lessonsCache = null;
 
@@ -34,6 +34,7 @@ async function handleGenerate() {
       birth: selection.birth,
       isFirstTimeParent: selection.isFTP,
       isPregnant: selection.isPregnant,
+      pacing: selection.pacing,
       topics: selection.topics,
     };
     const queue = filterLessons(lessons, participant);
@@ -50,6 +51,11 @@ async function handleGenerate() {
 function boot() {
   initUI();
   document.getElementById('generateBtn')?.addEventListener('click', handleGenerate);
+  document.getElementById('resetBtn')?.addEventListener('click', () => {
+    resetForm();
+    clearSchedule();
+    setStatus('');
+  });
 }
 
 boot();
