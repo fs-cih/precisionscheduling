@@ -7,6 +7,7 @@ const birthEl = document.getElementById('birthDate');
 const pregEl = document.getElementById('pregnant');
 const dueDateEl = document.getElementById('dueDate');
 const statusEl = document.getElementById('status');
+const maxLessonsEl = document.getElementById('maxLessons');
 
 function updateDefinedState() {
   if (!pacingEl || !definedEl) return;
@@ -53,6 +54,8 @@ export function resetForm() {
   if (pacingEl) pacingEl.value = 'standard';
   if (definedEl) definedEl.value = '';
 
+  if (maxLessonsEl) maxLessonsEl.value = '3';
+
   const ftpEl = document.getElementById('ftp');
   if (ftpEl) ftpEl.value = 'no';
 
@@ -77,6 +80,8 @@ export function readSelections() {
 
   const birth = parseDate(isPregnant ? dueDateEl?.value : birthEl?.value);
   const first = parseDate(document.getElementById('firstLesson')?.value);
+  const parsedLimit = Number.parseInt(maxLessonsEl?.value ?? '', 10);
+  const maxLessonsPerVisit = Number.isNaN(parsedLimit) ? 3 : Math.max(1, parsedLimit);
 
   return {
     pid: document.getElementById('pid')?.value.trim() ?? '',
@@ -94,6 +99,7 @@ export function readSelections() {
       sti: Boolean(document.getElementById('topic_sti')?.checked),
       substance: Boolean(document.getElementById('topic_substance')?.checked),
     },
+    maxLessonsPerVisit,
   };
 }
 
