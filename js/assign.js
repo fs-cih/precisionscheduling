@@ -104,6 +104,27 @@ export function assignLessons(visits, participant, lessons) {
     });
   }
 
+  const scheduledTimes = new Set(rows.map((row) => row.date.getTime()));
+
+  visits.forEach((visitDate, index) => {
+    const time = visitDate.getTime();
+    if (!scheduledTimes.has(time)) {
+      const childAgeM = monthsBetween(participant.birth, visitDate);
+      rows.push({
+        visit: index + 1,
+        date: visitDate,
+        ageM: childAgeM,
+        code: '',
+        subject: 'No lessons scheduled',
+        minutes: 0,
+        placeholder: true,
+      });
+      scheduledTimes.add(time);
+    }
+  });
+
+  rows.sort((a, b) => a.date.getTime() - b.date.getTime());
+
   if (rows.length) {
     const visitOrder = [...new Set(rows.map((row) => row.date.getTime()))]
       .sort((a, b) => a - b)
