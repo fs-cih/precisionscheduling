@@ -3,19 +3,7 @@ import { generateVisits } from './pacing.js';
 import { filterLessons } from './filters.js';
 import { assignLessons } from './assign.js';
 import { clearSchedule, updateSchedule } from './schedule.js';
-
-let lessonsCache = null;
-
-async function fetchLessons() {
-  if (!lessonsCache) {
-    const response = await fetch('lessons.json');
-    if (!response.ok) {
-      throw new Error('Could not load lessons.json');
-    }
-    lessonsCache = await response.json();
-  }
-  return lessonsCache;
-}
+import { getLessons } from './lessons.js';
 
 async function handleGenerate() {
   try {
@@ -28,7 +16,7 @@ async function handleGenerate() {
 
     setStatus('Building schedule…');
 
-    const lessons = await fetchLessons();
+    const lessons = await getLessons();
     const visits = generateVisits(selection.pacing, selection.definedPref, selection.birth, selection.first);
     const participant = {
       birth: selection.birth,
@@ -38,6 +26,7 @@ async function handleGenerate() {
       agePriority: selection.agePriority,
       topics: selection.topics,
       maxLessonsPerVisit: selection.maxLessonsPerVisit,
+      completedLessons: selection.completedLessons,
     };
     const queue = filterLessons(lessons, participant);
     const schedule = assignLessons(visits, participant, queue);
