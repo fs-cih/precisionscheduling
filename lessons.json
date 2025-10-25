@@ -124,7 +124,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 12,
-    "seqAge": -1.2,
+    "seqAge": -1.4,
     "description": "Preparing a baby’s sleeping area; Sudden Infant Death Syndrome (SIDS); co-sleeping"
   },
   {
@@ -140,7 +140,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 6,
-    "seqAge": -1.1,
+    "seqAge": -1.2,
     "description": "Options and tips for feeding newborns; pp1-12 cover breastfeeding; 13-20 bottle feeding; 21-23 burping"
   },
   {
@@ -172,7 +172,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 6,
-    "seqAge": -4,
+    "seqAge": -0.9,
     "description": "Safe and appropriate dress for infants; unsafe features of infant clothing"
   },
   {
@@ -188,7 +188,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 3,
-    "seqAge": -0.9,
+    "seqAge": -0.7,
     "description": "Introduction to positive aspects of breastfeeding; early stages of breastfeeding a newborn; evolution of breast milk; breastfeeding positions; pumping and storing breast milk"
   },
   {
@@ -252,7 +252,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 3,
-    "seqAge": -1,
+    "seqAge": -0.25,
     "description": "Proper car seat safety for infants; what’s needed to prepare for outings with baby"
   },
   {
