@@ -104,5 +104,18 @@ export function assignLessons(visits, participant, lessons) {
     });
   }
 
+  if (rows.length) {
+    const visitOrder = [...new Set(rows.map((row) => row.date.getTime()))]
+      .sort((a, b) => a - b)
+      .reduce((acc, time, index) => {
+        acc[time] = index + 1;
+        return acc;
+      }, {});
+
+    rows.forEach((row) => {
+      row.visit = visitOrder[row.date.getTime()];
+    });
+  }
+
   return rows;
 }

@@ -30,6 +30,18 @@ export function addDays(date, amount) {
   return next;
 }
 
+export function addMonths(date, amount) {
+  const next = new Date(date);
+  const day = next.getDate();
+  next.setMonth(next.getMonth() + amount);
+
+  if (next.getDate() !== day) {
+    next.setDate(0);
+  }
+
+  return next;
+}
+
 export function monthsBetween(birth, current) {
   let months = (current.getFullYear() - birth.getFullYear()) * 12 +
                (current.getMonth() - birth.getMonth());
