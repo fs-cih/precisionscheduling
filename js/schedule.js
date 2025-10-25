@@ -83,13 +83,15 @@ export function updateSchedule(schedule, pid) {
 
   let summaryText = '';
   if (rows.length) {
-    const lessonsWord = rows.length === 1 ? 'lesson' : 'lessons';
+    const scheduledLessons = rows.filter((row) => !row.placeholder);
+    const lessonCount = scheduledLessons.length;
+    const lessonsWord = lessonCount === 1 ? 'lesson' : 'lessons';
     const visitWord = visitsUsed === 1 ? 'visit' : 'visits';
-    summaryText = `Scheduled ${rows.length} ${lessonsWord} across ${visitsUsed} ${visitWord} (planned: ${totalVisits}).`;
+    summaryText = `Scheduled ${lessonCount} ${lessonsWord} across ${visitsUsed} ${visitWord} (planned: ${totalVisits}).`;
 
     if (removedVisits > 0) {
       const removedWord = removedVisits === 1 ? 'visit' : 'visits';
-      summaryText += ` Removed ${removedVisits} ${removedWord} with no lessons.`;
+      summaryText += ` No lessons scheduled for ${removedVisits} ${removedWord}.`;
     }
 
     if (overflowCount > 0) {
