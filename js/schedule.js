@@ -55,8 +55,6 @@ function renderRows(rows) {
       visitTotal = 0;
     }
   });
-
-  resultsCard.style.display = rows.length ? 'block' : 'none';
 }
 
 function buildCsv(rows, pid) {
@@ -72,14 +70,48 @@ function buildCsv(rows, pid) {
   return lines.join('\n');
 }
 
-export function updateSchedule(rows, visitsCount, pid) {
+export function updateSchedule(schedule, pid) {
+  const {
+    rows = [],
+    totalVisits = 0,
+    visitsUsed = 0,
+    overflowCount = 0,
+    removedVisits = 0,
+  } = schedule ?? {};
+
   renderRows(rows);
 
-  const lessonCount = rows.filter((row) => !row.placeholder).length;
-  const summaryText = rows.length
-    ? `Generated ${lessonCount} lesson rows. (Visits created: ${visitsCount}).`
-    : `No lessons placed. (Visits created: ${visitsCount}).`;
-  summaryEl.textContent = summaryText;
+  let summaryText = '';
+  if (rows.length) {
+    const lessonsWord = rows.length === 1 ? 'lesson' : 'lessons';
+    const visitWord = visitsUsed === 1 ? 'visit' : 'visits';
+    summaryText = `Scheduled ${rows.length} ${lessonsWord} across ${visitsUsed} ${visitWord} (planned: ${totalVisits}).`;
+
+    if (removedVisits > 0) {
+      const removedWord = removedVisits === 1 ? 'visit' : 'visits';
+      summaryText += ` Removed ${removedVisits} ${removedWord} with no lessons.`;
+    }
+
+    if (overflowCount > 0) {
+      const overflowWord = overflowCount === 1 ? 'lesson' : 'lessons';
+      summaryText += ` Unable to place ${overflowCount} ${overflowWord}; visit capacity exceeded.`;
+    }
+  } else {
+    summaryText = totalVisits
+      ? `No lessons could be scheduled. Planned visits: ${totalVisits}.`
+      : 'No lessons could be scheduled.';
+  }
+
+  if (summaryEl) {
+    summaryEl.textContent = summaryText;
+    summaryEl.classList.toggle('warn', overflowCount > 0);
+    summaryEl.classList.toggle('muted', overflowCount === 0);
+  }
+
+  if (resultsCard) {
+    const shouldShow = rows.length > 0 || overflowCount > 0 || removedVisits > 0;
+    resultsCard.style.display = shouldShow ? 'block' : 'none';
+  }
 
   if (rows.length) {
     exportBtn.disabled = false;

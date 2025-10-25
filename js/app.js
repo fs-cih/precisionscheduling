@@ -39,9 +39,9 @@ async function handleGenerate() {
       topics: selection.topics,
     };
     const queue = filterLessons(lessons, participant);
-    const rows = assignLessons(visits, participant, queue);
+    const schedule = assignLessons(visits, participant, queue);
 
-    updateSchedule(rows, visits.length, selection.pid);
+    updateSchedule(schedule, selection.pid);
     setStatus('');
   } catch (error) {
     console.error(error);
