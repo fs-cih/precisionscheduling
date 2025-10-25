@@ -75,8 +75,9 @@ function buildCsv(rows, pid) {
 export function updateSchedule(rows, visitsCount, pid) {
   renderRows(rows);
 
+  const lessonCount = rows.filter((row) => !row.placeholder).length;
   const summaryText = rows.length
-    ? `Generated ${rows.length} lesson rows. (Visits created: ${visitsCount}).`
+    ? `Generated ${lessonCount} lesson rows. (Visits created: ${visitsCount}).`
     : `No lessons placed. (Visits created: ${visitsCount}).`;
   summaryEl.textContent = summaryText;
 
