@@ -7,7 +7,7 @@ export function assignLessons(visits, participant, lessons) {
   const topics = participant?.topics ?? {};
 
   const parsedLimit = Number.parseInt(participant?.maxLessonsPerVisit, 10);
-  const maxLessonsPerVisit = Number.isNaN(parsedLimit) ? 3 : Math.max(1, parsedLimit);
+  const maxLessonsPerVisit = Number.isNaN(parsedLimit) ? 1 : Math.max(1, parsedLimit);
 
   const finalVisitIndex = Math.max(0, visits.length - 1);
   const finalLessonIndex = availableLessons.findIndex((lesson) => lesson.code === 'YGC11');
