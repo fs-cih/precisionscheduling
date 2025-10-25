@@ -1,4 +1,5 @@
 import { parseDate } from './dates.js';
+import { getLessons } from './lessons.js';
 
 const pacingEl = document.getElementById('pacing');
 const agePriorityEl = document.getElementById('agePriority');
@@ -8,6 +9,7 @@ const pregEl = document.getElementById('pregnant');
 const dueDateEl = document.getElementById('dueDate');
 const statusEl = document.getElementById('status');
 const maxLessonsEl = document.getElementById('maxLessons');
+const completedLessonsEl = document.getElementById('completedLessons');
 
 function updateDefinedState() {
   if (!pacingEl || !definedEl) return;
@@ -40,6 +42,8 @@ export function initUI() {
   pregEl?.addEventListener('change', () => {
     updateDueDateState();
   });
+
+  populateCompletedLessons();
 }
 
 export function resetForm() {
@@ -69,6 +73,12 @@ export function resetForm() {
     const el = document.getElementById(id);
     if (el) el.checked = false;
   });
+
+  if (completedLessonsEl) {
+    Array.from(completedLessonsEl.options).forEach((option) => {
+      option.selected = false;
+    });
+  }
 
   updateDefinedState();
   updateDueDateState();
@@ -100,10 +110,47 @@ export function readSelections() {
       substance: Boolean(document.getElementById('topic_substance')?.checked),
     },
     maxLessonsPerVisit,
+    completedLessons: completedLessonsEl
+      ? Array.from(completedLessonsEl.selectedOptions).map((option) => option.value)
+      : [],
   };
 }
 
 export function setStatus(message) {
   if (!statusEl) return;
   statusEl.textContent = message;
+}
+
+async function populateCompletedLessons() {
+  if (!completedLessonsEl) return;
+
+  try {
+    const lessons = await getLessons();
+    const sortedLessons = [...lessons].sort((a, b) => {
+      const subjectA = (a?.subject ?? '').toLowerCase();
+      const subjectB = (b?.subject ?? '').toLowerCase();
+      if (subjectA < subjectB) return -1;
+      if (subjectA > subjectB) return 1;
+      return (a?.code ?? '').localeCompare(b?.code ?? '');
+    });
+
+    completedLessonsEl.innerHTML = '';
+
+    sortedLessons.forEach((lesson) => {
+      if (!lesson?.code || !lesson?.subject) return;
+
+      const option = document.createElement('option');
+      option.value = lesson.code;
+      option.textContent = `${lesson.code} — ${lesson.subject}`;
+      completedLessonsEl.appendChild(option);
+    });
+  } catch (error) {
+    console.error('Unable to load lessons for completed list', error);
+    completedLessonsEl.innerHTML = '';
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Unable to load lessons';
+    option.disabled = true;
+    completedLessonsEl.appendChild(option);
+  }
 }

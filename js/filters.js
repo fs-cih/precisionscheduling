@@ -82,7 +82,14 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
 }
 
 export function filterLessons(allLessons, participant) {
+  const completed = new Set(
+    Array.isArray(participant?.completedLessons)
+      ? participant.completedLessons.filter((code) => typeof code === 'string' && code.trim() !== '')
+      : [],
+  );
+
   return allLessons
+    .filter((lesson) => !completed.has(lesson?.code))
     .filter((lesson) => isLessonRelevant(lesson, participant, participant?.topics))
     .sort((a, b) => {
       const { start: startA } = getLessonAgeRange(a);
