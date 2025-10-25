@@ -12,7 +12,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 36,
-    "seqAge": -12,
+    "seqAge": -2.8,
     "description": "Definition of short and long-term goals; the importance of goal-setting; how to set goals; improving self-esteem; importance of being a good role model"
   },
   {
@@ -28,7 +28,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 0,
-    "seqAge": -11,
+    "seqAge": -2.5,
     "description": "Prenatal growth and development; prenatal care; effects of prenatal exposure to substances; nutrition and weight gain during pregnancy"
   },
   {
@@ -44,7 +44,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 0,
-    "seqAge": -10,
+    "seqAge": -2.3,
     "description": "Stages (or trimesters) of pregnancy; changes that occur"
   },
   {
@@ -60,7 +60,7 @@
     "sti": false,
     "substanceUse": true,
     "upToAge": 0,
-    "seqAge": -9,
+    "seqAge": -2.1,
     "description": "Discuss all substance use with health care provider, including herbs, medications, supplements, and substances; how substances impact pregnant person and baby; explore opportunities and resources for support"
   },
   {
@@ -76,7 +76,7 @@
     "sti": false,
     "substanceUse": true,
     "upToAge": 0,
-    "seqAge": -8,
+    "seqAge": -1.9,
     "description": "Traditions and systems of support to decrease personal substance use and promote optimal wellbeing"
   },
   {
@@ -92,7 +92,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 0,
-    "seqAge": -7,
+    "seqAge": -1.6,
     "description": "Diabetes and blood sugar basics; how blood sugar affects the pregnant person and growing baby; gestational diabetes; importance of controlling blood sugar levels"
   },
   {
@@ -108,7 +108,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 3,
-    "seqAge": -6,
+    "seqAge": -1.4,
     "description": "Supplies needed immediately after baby’s birth; safety measures that should be taken inside the home before baby arrives; safety measures that should be taken to exterior of home "
   },
   {
@@ -124,7 +124,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 12,
-    "seqAge": -6,
+    "seqAge": -1.2,
     "description": "Preparing a baby’s sleeping area; Sudden Infant Death Syndrome (SIDS); co-sleeping"
   },
   {
@@ -140,7 +140,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 6,
-    "seqAge": -5,
+    "seqAge": -1.1,
     "description": "Options and tips for feeding newborns; pp1-12 cover breastfeeding; 13-20 bottle feeding; 21-23 burping"
   },
   {
@@ -156,7 +156,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 4,
-    "seqAge": -4,
+    "seqAge": -0.9,
     "description": "How to safely change a diaper; diaper rash identification, prevention, and treatment; frequency and appearance of normal stools; dehydration identification, treatment, and prevention"
   },
   {
@@ -188,7 +188,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 3,
-    "seqAge": -3,
+    "seqAge": -0.9,
     "description": "Introduction to positive aspects of breastfeeding; early stages of breastfeeding a newborn; evolution of breast milk; breastfeeding positions; pumping and storing breast milk"
   },
   {
@@ -204,7 +204,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 12,
-    "seqAge": -3,
+    "seqAge": -0.7,
     "description": "Preparing a bath; bathing an infant safely; frequency of infant bathing; cleaning around infant’s umbilical cord and fontanels"
   },
   {
@@ -220,7 +220,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 0,
-    "seqAge": -2,
+    "seqAge": -0.5,
     "description": "Preparing for labor; relaxation during labor and delivery; signs of labor; recognizing contractions; stages of labor; tips for labor"
   },
   {
@@ -236,7 +236,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 0,
-    "seqAge": -2,
+    "seqAge": -0.5,
     "description": "What to expect in delivery room; monitors and procedures during labor"
   },
   {
@@ -268,7 +268,7 @@
     "sti": false,
     "substanceUse": false,
     "upToAge": 36,
-    "seqAge": -1,
+    "seqAge": -0.25,
     "description": "Explaining paternity and steps for establishing paternity of baby"
   },
   {
