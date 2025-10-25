@@ -5,6 +5,10 @@ export function assignLessons(visits, participant, lessons) {
   const rows = [];
   const availableLessons = Array.isArray(lessons) ? [...lessons] : [];
   const topics = participant?.topics ?? {};
+  const providedDuration = Number(participant?.visitDuration);
+  const visitDuration = Number.isFinite(providedDuration) && providedDuration > 0
+    ? providedDuration
+    : 90;
 
   const finalVisitIndex = Math.max(0, visits.length - 1);
   const finalLessonIndex = availableLessons.findIndex((lesson) => lesson.code === 'YGC11');
@@ -23,7 +27,7 @@ export function assignLessons(visits, participant, lessons) {
     const childAgeM = monthsBetween(participant.birth, visitDate);
     const isFinalVisit = visitIndex === finalVisitIndex;
     const reservedMinutes = isFinalVisit && finalLesson ? finalLesson.minutes : 0;
-    const visitCapacity = Math.max(0, 90 - reservedMinutes);
+    const visitCapacity = Math.max(0, visitDuration - reservedMinutes);
     const baseMaxLessons = singleLessonVisits ? 1 : 3;
     const maxLessons = isFinalVisit && finalLesson
       ? (singleLessonVisits ? 1 : 2)
@@ -119,5 +123,6 @@ export function assignLessons(visits, participant, lessons) {
     totalVisits: visits.length,
     overflowCount: availableLessons.length + (finalLesson && !scheduledFinal ? 1 : 0),
     removedVisits: placeholderVisitCount,
+    visitDuration,
   };
 }

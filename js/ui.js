@@ -3,6 +3,7 @@ import { parseDate } from './dates.js';
 const pacingEl = document.getElementById('pacing');
 const agePriorityEl = document.getElementById('agePriority');
 const definedEl = document.getElementById('definedPref');
+const visitDurationEl = document.getElementById('visitDuration');
 const birthEl = document.getElementById('birthDate');
 const pregEl = document.getElementById('pregnant');
 const dueDateEl = document.getElementById('dueDate');
@@ -52,6 +53,7 @@ export function resetForm() {
 
   if (pacingEl) pacingEl.value = 'standard';
   if (definedEl) definedEl.value = '';
+  if (visitDurationEl) visitDurationEl.value = '90';
 
   const ftpEl = document.getElementById('ftp');
   if (ftpEl) ftpEl.value = 'no';
@@ -77,6 +79,11 @@ export function readSelections() {
 
   const birth = parseDate(isPregnant ? dueDateEl?.value : birthEl?.value);
   const first = parseDate(document.getElementById('firstLesson')?.value);
+  const visitDurationRaw = visitDurationEl?.value ?? '';
+  const visitDurationParsed = Number.parseInt(visitDurationRaw, 10);
+  const visitDuration = Number.isFinite(visitDurationParsed) && visitDurationParsed > 0
+    ? visitDurationParsed
+    : 90;
 
   return {
     pid: document.getElementById('pid')?.value.trim() ?? '',
@@ -87,6 +94,7 @@ export function readSelections() {
     agePriority: agePriorityEl?.value ?? 'standard',
     birth,
     first,
+    visitDuration,
     topics: {
       cfw: Boolean(document.getElementById('topic_cfw')?.checked),
       fp: Boolean(document.getElementById('topic_fp')?.checked),

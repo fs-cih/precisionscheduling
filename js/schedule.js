@@ -77,6 +77,7 @@ export function updateSchedule(schedule, pid) {
     visitsUsed = 0,
     overflowCount = 0,
     removedVisits = 0,
+    visitDuration = 90,
   } = schedule ?? {};
 
   renderRows(rows);
@@ -87,7 +88,7 @@ export function updateSchedule(schedule, pid) {
     const lessonCount = scheduledLessons.length;
     const lessonsWord = lessonCount === 1 ? 'lesson' : 'lessons';
     const visitWord = visitsUsed === 1 ? 'visit' : 'visits';
-    summaryText = `Scheduled ${lessonCount} ${lessonsWord} across ${visitsUsed} ${visitWord} (planned: ${totalVisits}).`;
+    summaryText = `Scheduled ${lessonCount} ${lessonsWord} across ${visitsUsed} ${visitWord} (planned: ${totalVisits}). Typical visit length: ${visitDuration} minutes.`;
 
     if (removedVisits > 0) {
       const removedWord = removedVisits === 1 ? 'visit' : 'visits';

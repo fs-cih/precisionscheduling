@@ -36,6 +36,7 @@ async function handleGenerate() {
       isPregnant: selection.isPregnant,
       pacing: selection.pacing,
       agePriority: selection.agePriority,
+      visitDuration: selection.visitDuration,
       topics: selection.topics,
     };
     const queue = filterLessons(lessons, participant);
