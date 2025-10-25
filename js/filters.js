@@ -67,12 +67,18 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
   }
 
   const priority = participant?.agePriority ?? 'standard';
+  const meetsLowerBound = childAgeM >= start;
+  const meetsUpperBound = childAgeM <= end;
 
   if (priority === 'appropriate') {
-    return childAgeM >= start && childAgeM <= end;
+    return meetsLowerBound && meetsUpperBound;
   }
 
-  return childAgeM >= start;
+  if (!meetsUpperBound) {
+    return false;
+  }
+
+  return meetsLowerBound;
 }
 
 export function filterLessons(allLessons, participant) {

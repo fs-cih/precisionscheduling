@@ -14,13 +14,20 @@ export function assignLessons(visits, participant, lessons) {
     [finalLesson] = availableLessons.splice(finalLessonIndex, 1);
   }
 
+  const singleLessonVisits =
+    (participant?.pacing ?? 'standard') === 'standard' &&
+    (participant?.agePriority ?? 'standard') === 'standard';
+
   for (let visitIndex = 0; visitIndex < visits.length; visitIndex += 1) {
     const visitDate = visits[visitIndex];
     const childAgeM = monthsBetween(participant.birth, visitDate);
     const isFinalVisit = visitIndex === finalVisitIndex;
     const reservedMinutes = isFinalVisit && finalLesson ? finalLesson.minutes : 0;
     const visitCapacity = Math.max(0, 120 - reservedMinutes);
-    const maxLessons = isFinalVisit && finalLesson ? 2 : 3;
+    const baseMaxLessons = singleLessonVisits ? 1 : 3;
+    const maxLessons = isFinalVisit && finalLesson
+      ? (singleLessonVisits ? 1 : 2)
+      : baseMaxLessons;
 
     const visitRows = [];
     let totalMinutes = 0;
