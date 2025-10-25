@@ -66,11 +66,13 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
     return false;
   }
 
-  if (participant?.pacing === 'standard') {
-    return childAgeM >= start;
+  const priority = participant?.agePriority ?? 'standard';
+
+  if (priority === 'appropriate') {
+    return childAgeM >= start && childAgeM <= end;
   }
 
-  return childAgeM >= start && childAgeM <= end;
+  return childAgeM >= start;
 }
 
 export function filterLessons(allLessons, participant) {
