@@ -1,95 +1,170 @@
 import { monthsBetween } from './dates.js';
 import { getLessonAgeRange, shouldPull } from './filters.js';
 
+function toNumber(value, fallback = 0) {
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed)) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function getTargetAge(lesson) {
+  if (Number.isFinite(lesson?.seqAge)) {
+    return lesson.seqAge;
+  }
+  const { start } = getLessonAgeRange(lesson);
+  return start;
+}
+
+function calculateScore(lesson, visitAgeM) {
+  const { start, end } = getLessonAgeRange(lesson);
+  const target = getTargetAge(lesson);
+  const tolerance = 3;
+
+  const diff = Math.abs(visitAgeM - target);
+  let score = diff;
+
+  if (diff > tolerance) {
+    score += diff - tolerance;
+  }
+
+  if (visitAgeM < start) {
+    score += (start - visitAgeM) * 10;
+  } else if (visitAgeM > end) {
+    score += (visitAgeM - end) * 10;
+  }
+
+  return score;
+}
+
 export function assignLessons(visits, participant, lessons) {
   const rows = [];
-  const availableLessons = Array.isArray(lessons) ? [...lessons] : [];
+  const lessonPool = Array.isArray(lessons) ? [...lessons] : [];
   const topics = participant?.topics ?? {};
 
-  const parsedDuration = Number.parseInt(participant?.preferredVisitDuration, 10);
-  const preferredVisitDuration = Number.isNaN(parsedDuration)
-    ? 90
-    : Math.max(0, parsedDuration);
+  const preferredDuration = Math.max(0, toNumber(participant?.preferredVisitDuration, 90));
 
-  const finalVisitIndex = Math.max(0, visits.length - 1);
-  const finalLessonIndex = availableLessons.findIndex((lesson) => lesson.code === 'YGC11');
+  const visitInfos = visits.map((visitDate, index) => ({
+    index,
+    date: visitDate,
+    ageM: monthsBetween(participant.birth, visitDate),
+    assignments: [],
+    remainingMinutes: preferredDuration,
+    maxSlots: 1,
+  }));
+
+  const finalLessonIndex = lessonPool.findIndex((lesson) => lesson.code === 'YGC11');
   let finalLesson = null;
 
   if (finalLessonIndex >= 0) {
-    [finalLesson] = availableLessons.splice(finalLessonIndex, 1);
+    [finalLesson] = lessonPool.splice(finalLessonIndex, 1);
+    const lastVisit = visitInfos[visitInfos.length - 1];
+    if (lastVisit) {
+      lastVisit.assignments.push(finalLesson);
+      const minutes = Number.isFinite(finalLesson?.minutes) ? finalLesson.minutes : 0;
+      lastVisit.remainingMinutes = Math.max(0, lastVisit.remainingMinutes - minutes);
+    }
   }
 
-  for (let visitIndex = visits.length - 1; visitIndex >= 0; visitIndex -= 1) {
-    const visitDate = visits[visitIndex];
-    const childAgeM = monthsBetween(participant.birth, visitDate);
-    const isFinalVisit = visitIndex === finalVisitIndex;
-    const reservedMinutes = isFinalVisit && finalLesson ? finalLesson.minutes : 0;
-    const visitCapacity = Math.max(0, preferredVisitDuration - reservedMinutes);
+  const lessonsToSchedule = lessonPool.slice().sort((a, b) => getTargetAge(a) - getTargetAge(b));
+  const unscheduled = new Set(lessonsToSchedule.map((lesson) => lesson.code));
 
-    const visitRows = [];
-    let totalMinutes = 0;
-    let searchIndex = availableLessons.length - 1;
+  const minLessonMinutes = lessonsToSchedule.reduce((min, lesson) => {
+    const minutes = Number.isFinite(lesson?.minutes) ? lesson.minutes : 0;
+    return Math.min(min, minutes);
+  }, Infinity);
 
-    while (searchIndex >= 0) {
-      if (totalMinutes >= visitCapacity) {
+  const effectiveMinMinutes = Number.isFinite(minLessonMinutes) ? minLessonMinutes : 0;
+
+  let availableSlots = visitInfos.reduce(
+    (total, visit) => total + Math.max(visit.maxSlots - visit.assignments.length, 0),
+    0,
+  );
+  let shortage = lessonsToSchedule.length - availableSlots;
+
+  if (shortage > 0) {
+    const expandableVisits = visitInfos
+      .slice()
+      .sort((a, b) => b.remainingMinutes - a.remainingMinutes);
+
+    for (const visit of expandableVisits) {
+      if (shortage <= 0) {
         break;
       }
-      const lesson = availableLessons[searchIndex];
-      const { start } = getLessonAgeRange(lesson);
+      if (visit.maxSlots >= 2) {
+        continue;
+      }
+      if (visit.remainingMinutes <= 0) {
+        continue;
+      }
+      if (Number.isFinite(effectiveMinMinutes) && visit.remainingMinutes < effectiveMinMinutes) {
+        continue;
+      }
+      visit.maxSlots = 2;
+      shortage -= 1;
+    }
+  }
 
-      if (!shouldPull(lesson, participant, topics, childAgeM)) {
-        if (childAgeM < start) {
-          searchIndex -= 1;
-          continue;
-        }
-        availableLessons.splice(searchIndex, 1);
-        searchIndex -= 1;
+  for (const lesson of lessonsToSchedule) {
+    const lessonMinutes = Number.isFinite(lesson?.minutes) ? lesson.minutes : 0;
+    let bestVisit = null;
+    let bestScore = Infinity;
+
+    for (const visit of visitInfos) {
+      if (visit.assignments.length >= visit.maxSlots) {
         continue;
       }
 
-      if (totalMinutes + lesson.minutes > visitCapacity) {
-        searchIndex -= 1;
+      if (lessonMinutes > visit.remainingMinutes) {
         continue;
       }
 
-      visitRows.push({
-        visit: visitIndex + 1,
-        date: visitDate,
-        ageM: childAgeM,
-        code: lesson.code,
-        subject: lesson.subject,
-        minutes: lesson.minutes,
-      });
+      if (!shouldPull(lesson, participant, topics, visit.ageM)) {
+        continue;
+      }
 
-      totalMinutes += lesson.minutes;
-      availableLessons.splice(searchIndex, 1);
-      searchIndex -= 1;
+      const score = calculateScore(lesson, visit.ageM);
+
+      if (score < bestScore) {
+        bestScore = score;
+        bestVisit = visit;
+      }
     }
 
-    if (isFinalVisit && finalLesson) {
-      visitRows.push({
-        visit: visitIndex + 1,
-        date: visitDate,
-        ageM: childAgeM,
-        code: finalLesson.code,
-        subject: finalLesson.subject,
-        minutes: finalLesson.minutes,
-      });
+    if (!bestVisit) {
+      continue;
     }
 
-    if (!visitRows.length) {
-      visitRows.push({
-        visit: visitIndex + 1,
-        date: visitDate,
-        ageM: childAgeM,
+    bestVisit.assignments.push(lesson);
+    bestVisit.remainingMinutes = Math.max(0, bestVisit.remainingMinutes - lessonMinutes);
+    unscheduled.delete(lesson.code);
+  }
+
+  for (const visit of visitInfos) {
+    if (!visit.assignments.length) {
+      rows.push({
+        visit: visit.index + 1,
+        date: visit.date,
+        ageM: visit.ageM,
         code: 'No lesson scheduled',
         subject: 'No lesson scheduled',
         minutes: 0,
         placeholder: true,
       });
+      continue;
     }
 
-    rows.push(...visitRows);
+    for (const lesson of visit.assignments) {
+      rows.push({
+        visit: visit.index + 1,
+        date: visit.date,
+        ageM: visit.ageM,
+        code: lesson.code,
+        subject: lesson.subject,
+        minutes: Number.isFinite(lesson?.minutes) ? lesson.minutes : 0,
+      });
+    }
   }
 
   rows.sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -117,7 +192,7 @@ export function assignLessons(visits, participant, lessons) {
     rows,
     visitsUsed: uniqueVisitCount,
     totalVisits: visits.length,
-    overflowCount: availableLessons.length + (finalLesson && !scheduledFinal ? 1 : 0),
+    overflowCount: unscheduled.size + (finalLesson && !scheduledFinal ? 1 : 0),
     removedVisits: placeholderVisitCount,
   };
 }
