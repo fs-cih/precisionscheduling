@@ -1,6 +1,167 @@
 import { monthsBetween } from './dates.js';
 import { getLessonAgeRange, shouldPull } from './filters.js';
 
+function getLessonMinutes(lesson) {
+  return Number.isFinite(lesson?.minutes) ? lesson.minutes : 0;
+}
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function isHolidayBlackout(date) {
+  const month = date.getMonth();
+  if (month !== 10 && month !== 11) {
+    return false;
+  }
+
+  const cutoff = getDaysInMonth(date.getFullYear(), month) - 13;
+  return date.getDate() >= cutoff;
+}
+
+function isFirstHalfOfDecember(date) {
+  return date.getMonth() === 11 && date.getDate() <= 14;
+}
+
+function canPlaceLesson(visit, lesson, participant, topics) {
+  if (!visit || visit.blocked) {
+    return false;
+  }
+
+  if (visit.assignments.length >= visit.maxSlots) {
+    return false;
+  }
+
+  const lessonMinutes = getLessonMinutes(lesson);
+  if (lessonMinutes > visit.remainingMinutes) {
+    return false;
+  }
+
+  return shouldPull(lesson, participant, topics, visit.ageM);
+}
+
+function addLessonToVisit(visit, lesson) {
+  visit.assignments.push(lesson);
+  visit.remainingMinutes = Math.max(0, visit.remainingMinutes - getLessonMinutes(lesson));
+}
+
+function removeLessonFromVisit(visit, index) {
+  const [removed] = visit.assignments.splice(index, 1);
+  if (removed) {
+    visit.remainingMinutes += getLessonMinutes(removed);
+  }
+  return removed;
+}
+
+function tryFillVisitWithLesson(targetVisit, unscheduledCodes, lessonsByCode, participant, topics, donorVisits) {
+  if (!targetVisit || targetVisit.blocked || targetVisit.assignments.length >= targetVisit.maxSlots) {
+    return false;
+  }
+
+  const unscheduledLessons = Array.from(unscheduledCodes)
+    .map((code) => lessonsByCode.get(code))
+    .filter(Boolean);
+
+  for (const lesson of unscheduledLessons) {
+    if (canPlaceLesson(targetVisit, lesson, participant, topics)) {
+      addLessonToVisit(targetVisit, lesson);
+      unscheduledCodes.delete(lesson.code);
+      return true;
+    }
+  }
+
+  for (const donor of donorVisits) {
+    if (!donor || donor === targetVisit || donor.blocked) {
+      continue;
+    }
+
+    if (!donor.assignments.length) {
+      continue;
+    }
+
+    for (let i = donor.assignments.length - 1; i >= 0; i -= 1) {
+      const lesson = donor.assignments[i];
+      if (lesson?.code === 'YGC11') {
+        continue;
+      }
+      if (!canPlaceLesson(targetVisit, lesson, participant, topics)) {
+        continue;
+      }
+
+      removeLessonFromVisit(donor, i);
+      addLessonToVisit(targetVisit, lesson);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function ensureEarlyDecemberLesson(visitInfos, unscheduledCodes, lessonsByCode, participant, topics) {
+  const decemberTargets = visitInfos.filter(
+    (visit) => !visit.blocked && isFirstHalfOfDecember(visit.date),
+  );
+
+  if (!decemberTargets.length) {
+    return;
+  }
+
+  const hasLesson = decemberTargets.some((visit) => visit.assignments.length > 0);
+  if (hasLesson) {
+    return;
+  }
+
+  const donorVisits = visitInfos.filter(
+    (visit) => !visit.blocked && visit.assignments.length > 1 && !isFirstHalfOfDecember(visit.date),
+  );
+
+  for (const target of decemberTargets) {
+    if (tryFillVisitWithLesson(target, unscheduledCodes, lessonsByCode, participant, topics, donorVisits)) {
+      return;
+    }
+  }
+}
+
+function ensureLessonsInCloseIntervals(visitInfos, participant, unscheduledCodes, lessonsByCode, topics) {
+  if (participant?.pacing !== 'standard') {
+    return;
+  }
+
+  for (let i = 0; i < visitInfos.length - 1; i += 1) {
+    const current = visitInfos[i];
+    const next = visitInfos[i + 1];
+
+    if (current.blocked || next.blocked) {
+      continue;
+    }
+
+    const diffMs = next.date.getTime() - current.date.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+    if (diffDays > 14) {
+      continue;
+    }
+
+    if (current.assignments.length > 0 || next.assignments.length > 0) {
+      continue;
+    }
+
+    const donorVisits = visitInfos.filter(
+      (visit) =>
+        visit !== current &&
+        visit !== next &&
+        !visit.blocked &&
+        visit.assignments.length > 1,
+    );
+
+    if (tryFillVisitWithLesson(current, unscheduledCodes, lessonsByCode, participant, topics, donorVisits)) {
+      continue;
+    }
+
+    tryFillVisitWithLesson(next, unscheduledCodes, lessonsByCode, participant, topics, donorVisits);
+  }
+}
+
 function toNumber(value, fallback = 0) {
   const parsed = Number.parseInt(value, 10);
   if (Number.isNaN(parsed)) {
@@ -45,6 +206,10 @@ export function assignLessons(visits, participant, lessons) {
   const lessonPool = Array.isArray(lessons) ? [...lessons] : [];
   const topics = participant?.topics ?? {};
 
+  const lessonsByCode = new Map(
+    lessonPool.filter((lesson) => typeof lesson?.code === 'string').map((lesson) => [lesson.code, lesson]),
+  );
+
   const preferredDuration = Math.max(0, toNumber(participant?.preferredVisitDuration, 90));
 
   const visitInfos = visits.map((visitDate, index) => ({
@@ -52,20 +217,31 @@ export function assignLessons(visits, participant, lessons) {
     date: visitDate,
     ageM: monthsBetween(participant.birth, visitDate),
     assignments: [],
-    remainingMinutes: preferredDuration,
+    remainingMinutes: 0,
     maxSlots: 1,
+    blocked: isHolidayBlackout(visitDate),
   }));
+
+  visitInfos.forEach((visit) => {
+    if (visit.blocked) {
+      visit.maxSlots = 0;
+      visit.remainingMinutes = 0;
+    } else {
+      visit.remainingMinutes = preferredDuration;
+    }
+  });
 
   const finalLessonIndex = lessonPool.findIndex((lesson) => lesson.code === 'YGC11');
   let finalLesson = null;
 
   if (finalLessonIndex >= 0) {
     [finalLesson] = lessonPool.splice(finalLessonIndex, 1);
-    const lastVisit = visitInfos[visitInfos.length - 1];
-    if (lastVisit) {
-      lastVisit.assignments.push(finalLesson);
-      const minutes = Number.isFinite(finalLesson?.minutes) ? finalLesson.minutes : 0;
-      lastVisit.remainingMinutes = Math.max(0, lastVisit.remainingMinutes - minutes);
+    const lastEligibleVisit = [...visitInfos]
+      .reverse()
+      .find((visit) => canPlaceLesson(visit, finalLesson, participant, topics));
+
+    if (lastEligibleVisit) {
+      addLessonToVisit(lastEligibleVisit, finalLesson);
     }
   }
 
@@ -79,15 +255,18 @@ export function assignLessons(visits, participant, lessons) {
 
   const effectiveMinMinutes = Number.isFinite(minLessonMinutes) ? minLessonMinutes : 0;
 
-  let availableSlots = visitInfos.reduce(
-    (total, visit) => total + Math.max(visit.maxSlots - visit.assignments.length, 0),
-    0,
-  );
+  let availableSlots = visitInfos.reduce((total, visit) => {
+    if (visit.blocked) {
+      return total;
+    }
+    return total + Math.max(visit.maxSlots - visit.assignments.length, 0);
+  }, 0);
   let shortage = lessonsToSchedule.length - availableSlots;
 
   if (shortage > 0) {
     const expandableVisits = visitInfos
       .slice()
+      .filter((visit) => !visit.blocked)
       .sort((a, b) => b.remainingMinutes - a.remainingMinutes);
 
     for (const visit of expandableVisits) {
@@ -111,20 +290,11 @@ export function assignLessons(visits, participant, lessons) {
   const priority = participant?.agePriority ?? 'standard';
 
   for (const lesson of lessonsToSchedule) {
-    const lessonMinutes = Number.isFinite(lesson?.minutes) ? lesson.minutes : 0;
     let bestVisit = null;
     let bestScore = Infinity;
 
     for (const visit of visitInfos) {
-      if (visit.assignments.length >= visit.maxSlots) {
-        continue;
-      }
-
-      if (lessonMinutes > visit.remainingMinutes) {
-        continue;
-      }
-
-      if (!shouldPull(lesson, participant, topics, visit.ageM)) {
+      if (!canPlaceLesson(visit, lesson, participant, topics)) {
         continue;
       }
 
@@ -140,10 +310,12 @@ export function assignLessons(visits, participant, lessons) {
       continue;
     }
 
-    bestVisit.assignments.push(lesson);
-    bestVisit.remainingMinutes = Math.max(0, bestVisit.remainingMinutes - lessonMinutes);
+    addLessonToVisit(bestVisit, lesson);
     unscheduled.delete(lesson.code);
   }
+
+  ensureEarlyDecemberLesson(visitInfos, unscheduled, lessonsByCode, participant, topics);
+  ensureLessonsInCloseIntervals(visitInfos, participant, unscheduled, lessonsByCode, topics);
 
   for (const visit of visitInfos) {
     if (!visit.assignments.length) {
