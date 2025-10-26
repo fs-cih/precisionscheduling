@@ -78,6 +78,10 @@ select{
   font-size:12px;
 }
 
+.status-message{
+  margin-top:12px;
+}
+
 .btns{
   display:flex;
   gap:10px;
