@@ -1,4 +1,5 @@
 const YES = 'yes';
+export const AGE_TOLERANCE_MONTHS = 3;
 
 function toBool(value) {
   if (typeof value === 'string') {
@@ -76,7 +77,7 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
 
   if (Number.isFinite(start)) {
     const effectiveStart =
-      start >= 0 ? Math.max(0, start - 1) : start;
+      start >= 0 ? Math.max(0, start - AGE_TOLERANCE_MONTHS) : start;
     return childAgeM >= effectiveStart;
   }
 
