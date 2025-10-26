@@ -97,6 +97,64 @@ function tryFillVisitWithLesson(targetVisit, unscheduledCodes, lessonsByCode, pa
   return false;
 }
 
+function getDonorVisits(visitInfos, excluded = [], preferLater = false) {
+  const excludedSet = new Set(excluded);
+
+  return visitInfos
+    .filter((visit) => !excludedSet.has(visit) && !visit.blocked && visit.assignments.length > 0)
+    .sort((a, b) => {
+      const assignmentDiff = b.assignments.length - a.assignments.length;
+      if (assignmentDiff !== 0) {
+        return assignmentDiff;
+      }
+      return preferLater ? b.index - a.index : a.index - b.index;
+    });
+}
+
+function ensureEarlyVisitLessons(visitInfos, unscheduledCodes, lessonsByCode, participant, topics) {
+  if (participant?.pacing !== 'standard') {
+    return;
+  }
+
+  const earlyVisits = visitInfos.filter((visit) => !visit.blocked).slice(0, 6);
+
+  for (const visit of earlyVisits) {
+    if (visit.assignments.length > 0) {
+      continue;
+    }
+
+    const donors = getDonorVisits(visitInfos, [visit], true);
+    tryFillVisitWithLesson(visit, unscheduledCodes, lessonsByCode, participant, topics, donors);
+  }
+}
+
+function ensureNoConsecutiveEmptyVisits(visitInfos, unscheduledCodes, lessonsByCode, participant, topics) {
+  if (participant?.pacing !== 'standard') {
+    return;
+  }
+
+  const activeVisits = visitInfos.filter((visit) => !visit.blocked);
+
+  for (let i = 0; i < activeVisits.length - 1; i += 1) {
+    const current = activeVisits[i];
+    const next = activeVisits[i + 1];
+
+    if (current.assignments.length > 0 || next.assignments.length > 0) {
+      continue;
+    }
+
+    if (current.assignments.length === 0) {
+      const donors = getDonorVisits(visitInfos, [current, next], true);
+      tryFillVisitWithLesson(current, unscheduledCodes, lessonsByCode, participant, topics, donors);
+    }
+
+    if (next.assignments.length === 0) {
+      const donors = getDonorVisits(visitInfos, [current, next], true);
+      tryFillVisitWithLesson(next, unscheduledCodes, lessonsByCode, participant, topics, donors);
+    }
+  }
+}
+
 function ensureEarlyDecemberLesson(visitInfos, unscheduledCodes, lessonsByCode, participant, topics) {
   const decemberTargets = visitInfos.filter(
     (visit) => !visit.blocked && isFirstHalfOfDecember(visit.date),
@@ -317,8 +375,10 @@ export function assignLessons(visits, participant, lessons) {
     unscheduled.delete(lesson.code);
   }
 
-  ensureEarlyDecemberLesson(visitInfos, unscheduled, lessonsByCode, participant, topics);
+  ensureEarlyVisitLessons(visitInfos, unscheduled, lessonsByCode, participant, topics);
+  ensureNoConsecutiveEmptyVisits(visitInfos, unscheduled, lessonsByCode, participant, topics);
   ensureLessonsInCloseIntervals(visitInfos, participant, unscheduled, lessonsByCode, topics);
+  ensureEarlyDecemberLesson(visitInfos, unscheduled, lessonsByCode, participant, topics);
 
   for (const visit of visitInfos) {
     if (!visit.assignments.length) {
