@@ -10,7 +10,7 @@ async function handleGenerate() {
     const selection = readSelections();
 
     if (!selection.first || !selection.birth) {
-      setStatus('Please fill First Lesson Date and Birth Date (or Due Date).');
+      setStatus('Please fill the First Lesson Date and the Birth or Due Date.');
       return;
     }
 
