@@ -1,5 +1,5 @@
 import { monthsBetween } from './dates.js';
-import { getLessonAgeRange, shouldPull } from './filters.js';
+import { AGE_TOLERANCE_MONTHS, getLessonAgeRange, shouldPull } from './filters.js';
 
 function getLessonMinutes(lesson) {
   return Number.isFinite(lesson?.minutes) ? lesson.minutes : 0;
@@ -181,17 +181,20 @@ function getTargetAge(lesson) {
 function calculateScore(lesson, visitAgeM, priority) {
   const { start, end } = getLessonAgeRange(lesson);
   const target = getTargetAge(lesson);
-  const tolerance = 3;
+  const tolerance = AGE_TOLERANCE_MONTHS;
 
   const diff = Math.abs(visitAgeM - target);
-  let score = diff;
+  let score = diff > tolerance ? diff : 0;
 
   if (diff > tolerance) {
     score += diff - tolerance;
   }
 
-  if (priority !== 'appropriate' && Number.isFinite(start) && visitAgeM < start) {
-    score += (start - visitAgeM) * 10;
+  if (priority !== 'appropriate' && Number.isFinite(start)) {
+    const earlyThreshold = start >= 0 ? Math.max(0, start - tolerance) : start;
+    if (visitAgeM < earlyThreshold) {
+      score += (earlyThreshold - visitAgeM) * 10;
+    }
   }
 
   if (priority === 'appropriate' && Number.isFinite(end) && visitAgeM > end) {
