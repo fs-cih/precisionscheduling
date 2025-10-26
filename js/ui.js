@@ -6,7 +6,6 @@ const agePriorityEl = document.getElementById('agePriority');
 const definedEl = document.getElementById('definedPref');
 const birthEl = document.getElementById('birthDate');
 const pregEl = document.getElementById('pregnant');
-const dueDateEl = document.getElementById('dueDate');
 const statusEl = document.getElementById('status');
 const visitDurationEl = document.getElementById('visitDuration');
 const completedLessonsEl = document.getElementById('completedLessons');
@@ -16,31 +15,11 @@ function updateDefinedState() {
   definedEl.disabled = pacingEl.value !== 'defined';
 }
 
-function updateDueDateState() {
-  if (!dueDateEl) return;
-
-  const isPregnant = pregEl?.value === 'yes';
-
-  if (isPregnant) {
-    dueDateEl.disabled = false;
-    dueDateEl.required = true;
-  } else {
-    dueDateEl.value = '';
-    dueDateEl.disabled = true;
-    dueDateEl.required = false;
-  }
-}
-
 export function initUI() {
   updateDefinedState();
-  updateDueDateState();
 
   pacingEl?.addEventListener('change', () => {
     updateDefinedState();
-  });
-
-  pregEl?.addEventListener('change', () => {
-    updateDueDateState();
   });
 
   populateCompletedLessons();
@@ -66,7 +45,6 @@ export function resetForm() {
   if (pregEl) pregEl.value = 'no';
 
   if (birthEl) birthEl.value = '';
-  if (dueDateEl) dueDateEl.value = '';
 
   const topicIds = ['topic_cfw', 'topic_fp', 'topic_nutrition', 'topic_sti', 'topic_substance'];
   topicIds.forEach((id) => {
@@ -81,14 +59,13 @@ export function resetForm() {
   }
 
   updateDefinedState();
-  updateDueDateState();
 }
 
 export function readSelections() {
   const isFTP = document.getElementById('ftp')?.value === 'yes';
   const isPregnant = pregEl?.value === 'yes';
 
-  const birth = parseDate(isPregnant ? dueDateEl?.value : birthEl?.value);
+  const birth = parseDate(birthEl?.value);
   const first = parseDate(document.getElementById('firstLesson')?.value);
   const parsedDuration = Number.parseInt(visitDurationEl?.value ?? '', 10);
   const preferredVisitDuration = Number.isNaN(parsedDuration)
