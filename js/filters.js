@@ -75,7 +75,9 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
   }
 
   if (Number.isFinite(start)) {
-    return childAgeM >= start;
+    const effectiveStart =
+      start >= 0 ? Math.max(0, start - 1) : start;
+    return childAgeM >= effectiveStart;
   }
 
   return true;
