@@ -9,14 +9,47 @@ function getDaysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate();
 }
 
-function isHolidayBlackout(date) {
-  const month = date.getMonth();
-  if (month !== 10 && month !== 11) {
+function getThanksgivingDate(year) {
+  const novemberFirst = new Date(year, 10, 1);
+  const dayOfWeek = novemberFirst.getDay();
+  const firstThursdayOffset = (4 - dayOfWeek + 7) % 7;
+  return new Date(year, 10, 1 + firstThursdayOffset + 3 * 7);
+}
+
+function isThanksgivingWeek(date) {
+  if (date.getMonth() !== 10) {
     return false;
   }
 
-  const cutoff = getDaysInMonth(date.getFullYear(), month) - 13;
+  const thanksgiving = getThanksgivingDate(date.getFullYear());
+  const startOfWeek = new Date(thanksgiving);
+  startOfWeek.setDate(thanksgiving.getDate() - thanksgiving.getDay());
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+  return date >= startOfWeek && date <= endOfWeek;
+}
+
+function isLateDecember(date) {
+  if (date.getMonth() !== 11) {
+    return false;
+  }
+
+  const cutoff = getDaysInMonth(date.getFullYear(), 11) - 13;
   return date.getDate() >= cutoff;
+}
+
+function getHolidayBlackoutReason(date) {
+  if (isThanksgivingWeek(date)) {
+    return 'No Lessons Scheduled (Thanksgiving Week)';
+  }
+
+  if (isLateDecember(date)) {
+    return 'No lesson scheduled';
+  }
+
+  return null;
 }
 
 function isFirstHalfOfDecember(date) {
@@ -273,15 +306,19 @@ export function assignLessons(visits, participant, lessons) {
 
   const preferredDuration = Math.max(0, toNumber(participant?.preferredVisitDuration, 90));
 
-  const visitInfos = visits.map((visitDate, index) => ({
-    index,
-    date: visitDate,
-    ageM: monthsBetween(participant.birth, visitDate),
-    assignments: [],
-    remainingMinutes: 0,
-    maxSlots: 1,
-    blocked: isHolidayBlackout(visitDate),
-  }));
+  const visitInfos = visits.map((visitDate, index) => {
+    const blackoutReason = getHolidayBlackoutReason(visitDate);
+    return {
+      index,
+      date: visitDate,
+      ageM: monthsBetween(participant.birth, visitDate),
+      assignments: [],
+      remainingMinutes: 0,
+      maxSlots: 1,
+      blocked: Boolean(blackoutReason),
+      blackoutReason,
+    };
+  });
 
   visitInfos.forEach((visit) => {
     if (visit.blocked) {
@@ -400,12 +437,13 @@ export function assignLessons(visits, participant, lessons) {
 
   for (const visit of visitInfos) {
     if (!visit.assignments.length) {
+      const message = visit.blackoutReason ?? 'No lesson scheduled';
       rows.push({
         visit: visit.index + 1,
         date: visit.date,
         ageM: visit.ageM,
         code: 'No lesson scheduled',
-        subject: 'No lesson scheduled',
+        subject: message,
         minutes: 0,
         placeholder: true,
       });
