@@ -62,21 +62,21 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
   }
 
   const { start, end } = getLessonAgeRange(lesson);
+  const useTolerance = participant?.pacing === 'standard';
 
   if (!participant?.isPregnant && start < 0) {
     return false;
   }
 
   if (Number.isFinite(end)) {
-    const maximumAllowedAge = end + AGE_TOLERANCE_MONTHS;
-    if (childAgeM > maximumAllowedAge) {
+    if (childAgeM > end) {
       return false;
     }
   }
 
   if (Number.isFinite(start)) {
     const effectiveStart =
-      start >= 0 ? Math.max(0, start - AGE_TOLERANCE_MONTHS) : start;
+      useTolerance && start >= 0 ? Math.max(0, start - AGE_TOLERANCE_MONTHS) : start;
     return childAgeM >= effectiveStart;
   }
 
