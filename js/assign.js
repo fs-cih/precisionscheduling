@@ -42,7 +42,7 @@ function isLateDecember(date) {
 
 function getHolidayBlackoutReason(date) {
   if (isThanksgivingWeek(date)) {
-    return 'No Lessons Scheduled (Thanksgiving Week)';
+    return 'No lesson scheduled (Thanksgiving week)';
   }
 
   if (isLateDecember(date)) {
