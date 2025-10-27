@@ -20,6 +20,14 @@
       <label for="firstLesson">Date of first lesson:</label>
       <input id="firstLesson" type="date" required>
 
+      <label for="scheduleDuration">Duration of schedule:</label>
+      <select id="scheduleDuration">
+        <option value="up_to_3rd_birthday" selected>Up to youngest child's 3rd birthday</option>
+        <option value="up_to_due_date">Up to due date</option>
+        <option value="6_months">6 months from first visit</option>
+        <option value="12_months">12 months from first visit</option>
+      </select>
+
       <label for="pacing">Pacing:</label>
       <select id="pacing">
         <option value="standard" selected>Standard</option>
@@ -35,7 +43,7 @@
         <option value="bimonthly">Every 2 months</option>
       </select>
 
-      <label for="completedLessons">Lessons already delivered:</label>
+      <label for="completedLessons">Lessons to exclude from schedule:</label>
       <div class="input-stack">
         <select id="completedLessons" multiple size="8"></select>
         <div class="muted">Hold Ctrl (Windows) or Command (macOS) to select multiple lessons.</div>
