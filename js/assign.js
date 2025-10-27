@@ -292,6 +292,24 @@ export function assignLessons(visits, participant, lessons) {
     }
   });
 
+  const eligibleCodes = new Set();
+  const markEligibility = (lesson) => {
+    if (!lesson?.code) {
+      return;
+    }
+    for (const visit of visitInfos) {
+      if (visit.blocked) {
+        continue;
+      }
+      if (shouldPull(lesson, participant, topics, visit.ageM)) {
+        eligibleCodes.add(lesson.code);
+        return;
+      }
+    }
+  };
+
+  lessonPool.forEach(markEligibility);
+
   const finalLessonIndex = lessonPool.findIndex((lesson) => lesson.code === 'YGC11');
   let finalLesson = null;
 
@@ -427,11 +445,31 @@ export function assignLessons(visits, participant, lessons) {
   ).size;
   const scheduledFinal = finalLesson ? rows.some((row) => row.code === finalLesson.code) : false;
 
+  let overflowCount = 0;
+  let skippedCount = 0;
+
+  for (const code of unscheduled) {
+    if (eligibleCodes.has(code)) {
+      overflowCount += 1;
+    } else {
+      skippedCount += 1;
+    }
+  }
+
+  if (finalLesson && !scheduledFinal) {
+    if (eligibleCodes.has(finalLesson.code)) {
+      overflowCount += 1;
+    } else {
+      skippedCount += 1;
+    }
+  }
+
   return {
     rows,
     visitsUsed: uniqueVisitCount,
     totalVisits: visits.length,
-    overflowCount: unscheduled.size + (finalLesson && !scheduledFinal ? 1 : 0),
+    overflowCount,
+    skippedCount,
     removedVisits: placeholderVisitCount,
   };
 }
