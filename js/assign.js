@@ -423,11 +423,13 @@ export function assignLessons(visits, participant, lessons) {
         subject: message,
         minutes: 0,
         placeholder: true,
+        standardAgeM: null,
       });
       continue;
     }
 
     for (const lesson of visit.assignments) {
+      const standardAge = getTargetAge(lesson);
       rows.push({
         visit: visit.index + 1,
         date: visit.date,
@@ -435,6 +437,7 @@ export function assignLessons(visits, participant, lessons) {
         code: lesson.code,
         subject: lesson.subject,
         minutes: Number.isFinite(lesson?.minutes) ? lesson.minutes : 0,
+        standardAgeM: Number.isFinite(standardAge) ? standardAge : null,
       });
     }
   }
