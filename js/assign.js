@@ -65,23 +65,18 @@ function canPlaceLesson(visit, lesson, participant, topics) {
     return false;
   }
 
-  const lessonMinutes = getLessonMinutes(lesson);
-  if (lessonMinutes > visit.remainingMinutes) {
-    return false;
-  }
-
   return shouldPull(lesson, participant, topics, visit.ageM);
 }
 
 function addLessonToVisit(visit, lesson) {
   visit.assignments.push(lesson);
-  visit.remainingMinutes = Math.max(0, visit.remainingMinutes - getLessonMinutes(lesson));
+  visit.totalMinutes += getLessonMinutes(lesson);
 }
 
 function removeLessonFromVisit(visit, index) {
   const [removed] = visit.assignments.splice(index, 1);
   if (removed) {
-    visit.remainingMinutes += getLessonMinutes(removed);
+    visit.totalMinutes = Math.max(0, visit.totalMinutes - getLessonMinutes(removed));
   }
   return removed;
 }
@@ -139,6 +134,10 @@ function getDonorVisits(visitInfos, excluded = [], preferLater = false) {
       const assignmentDiff = b.assignments.length - a.assignments.length;
       if (assignmentDiff !== 0) {
         return assignmentDiff;
+      }
+      const minuteDiff = b.totalMinutes - a.totalMinutes;
+      if (minuteDiff !== 0) {
+        return minuteDiff;
       }
       return preferLater ? b.index - a.index : a.index - b.index;
     });
@@ -253,14 +252,6 @@ function ensureLessonsInCloseIntervals(visitInfos, participant, unscheduledCodes
   }
 }
 
-function toNumber(value, fallback = 0) {
-  const parsed = Number.parseInt(value, 10);
-  if (Number.isNaN(parsed)) {
-    return fallback;
-  }
-  return parsed;
-}
-
 function getTargetAge(lesson) {
   if (Number.isFinite(lesson?.seqAge)) {
     return lesson.seqAge;
@@ -304,8 +295,6 @@ export function assignLessons(visits, participant, lessons) {
     lessonPool.filter((lesson) => typeof lesson?.code === 'string').map((lesson) => [lesson.code, lesson]),
   );
 
-  const preferredDuration = Math.max(0, toNumber(participant?.preferredVisitDuration, 90));
-
   const visitInfos = visits.map((visitDate, index) => {
     const blackoutReason = getHolidayBlackoutReason(visitDate);
     return {
@@ -313,7 +302,7 @@ export function assignLessons(visits, participant, lessons) {
       date: visitDate,
       ageM: monthsBetween(participant.birth, visitDate),
       assignments: [],
-      remainingMinutes: 0,
+      totalMinutes: 0,
       maxSlots: 1,
       blocked: Boolean(blackoutReason),
       blackoutReason,
@@ -323,9 +312,6 @@ export function assignLessons(visits, participant, lessons) {
   visitInfos.forEach((visit) => {
     if (visit.blocked) {
       visit.maxSlots = 0;
-      visit.remainingMinutes = 0;
-    } else {
-      visit.remainingMinutes = preferredDuration;
     }
   });
 
@@ -364,42 +350,20 @@ export function assignLessons(visits, participant, lessons) {
   const lessonsToSchedule = lessonPool.slice().sort((a, b) => getTargetAge(a) - getTargetAge(b));
   const unscheduled = new Set(lessonsToSchedule.map((lesson) => lesson.code));
 
-  const minLessonMinutes = lessonsToSchedule.reduce((min, lesson) => {
-    const minutes = Number.isFinite(lesson?.minutes) ? lesson.minutes : 0;
-    return Math.min(min, minutes);
-  }, Infinity);
-
-  const effectiveMinMinutes = Number.isFinite(minLessonMinutes) ? minLessonMinutes : 0;
-
-  let availableSlots = visitInfos.reduce((total, visit) => {
-    if (visit.blocked) {
-      return total;
-    }
-    return total + Math.max(visit.maxSlots - visit.assignments.length, 0);
-  }, 0);
+  const activeVisits = visitInfos.filter((visit) => !visit.blocked);
+  let availableSlots = activeVisits.reduce(
+    (total, visit) => total + Math.max(visit.maxSlots - visit.assignments.length, 0),
+    0,
+  );
   let shortage = lessonsToSchedule.length - availableSlots;
 
-  if (shortage > 0) {
-    const expandableVisits = visitInfos
-      .slice()
-      .filter((visit) => !visit.blocked)
-      .sort((a, b) => b.remainingMinutes - a.remainingMinutes);
-
-    for (const visit of expandableVisits) {
-      if (shortage <= 0) {
-        break;
-      }
-      if (visit.maxSlots >= 2) {
-        continue;
-      }
-      if (visit.remainingMinutes <= 0) {
-        continue;
-      }
-      if (Number.isFinite(effectiveMinMinutes) && visit.remainingMinutes < effectiveMinMinutes) {
-        continue;
-      }
-      visit.maxSlots = 2;
+  if (shortage > 0 && activeVisits.length > 0) {
+    let indexOffset = 0;
+    while (shortage > 0) {
+      const targetVisit = activeVisits[indexOffset % activeVisits.length];
+      targetVisit.maxSlots += 1;
       shortage -= 1;
+      indexOffset += 1;
     }
   }
 
@@ -408,6 +372,8 @@ export function assignLessons(visits, participant, lessons) {
   for (const lesson of lessonsToSchedule) {
     let bestVisit = null;
     let bestScore = Infinity;
+    let bestProjectedMinutes = Infinity;
+    let bestAssignmentCount = Infinity;
 
     for (const visit of visitInfos) {
       if (!canPlaceLesson(visit, lesson, participant, topics)) {
@@ -415,10 +381,22 @@ export function assignLessons(visits, participant, lessons) {
       }
 
       const score = calculateScore(lesson, visit.ageM, priority);
+      const projectedMinutes = visit.totalMinutes + getLessonMinutes(lesson);
+      const assignmentCount = visit.assignments.length;
+      const shouldSelect =
+        score < bestScore ||
+        (score === bestScore &&
+          (projectedMinutes < bestProjectedMinutes ||
+            (projectedMinutes === bestProjectedMinutes &&
+              (assignmentCount < bestAssignmentCount ||
+                (assignmentCount === bestAssignmentCount &&
+                  (!bestVisit || visit.index < bestVisit.index))))));
 
-      if (score < bestScore) {
+      if (shouldSelect) {
         bestScore = score;
         bestVisit = visit;
+        bestProjectedMinutes = projectedMinutes;
+        bestAssignmentCount = assignmentCount;
       }
     }
 
