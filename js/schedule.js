@@ -40,7 +40,7 @@ function renderRows(rows) {
     const tdAge = document.createElement('td');
     tdAge.textContent = row.ageM < 0 ? 'Prenatal' : row.ageM;
     const tdCode = document.createElement('td');
-    tdCode.textContent = row.code;
+    tdCode.textContent = row.placeholder ? '—' : row.code;
     const tdSubject = document.createElement('td');
     tdSubject.textContent = row.subject;
     const tdMinutes = document.createElement('td');
