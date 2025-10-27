@@ -20,6 +20,28 @@ function download(filename, text) {
   URL.revokeObjectURL(url);
 }
 
+function formatVariance(standardAge, actualAge) {
+  if (!Number.isFinite(standardAge) || !Number.isFinite(actualAge)) {
+    return '';
+  }
+
+  let diff = Math.round((standardAge - actualAge) * 10) / 10;
+
+  if (Object.is(diff, -0)) {
+    diff = 0;
+  }
+
+  if (Math.abs(diff) < 1e-6) {
+    return '0';
+  }
+
+  const display = Number.isInteger(diff)
+    ? diff.toString()
+    : diff.toFixed(1).replace(/\.0$/, '');
+
+  return diff > 0 ? `+${display}` : display;
+}
+
 function renderRows(rows) {
   scheduleBody.innerHTML = '';
 
@@ -39,6 +61,8 @@ function renderRows(rows) {
     tdDate.textContent = fmtDate(row.date);
     const tdAge = document.createElement('td');
     tdAge.textContent = row.ageM < 0 ? 'Prenatal' : row.ageM;
+    const tdVariance = document.createElement('td');
+    tdVariance.textContent = formatVariance(row.standardAgeM, row.ageM);
     const tdCode = document.createElement('td');
     tdCode.textContent = row.placeholder ? '—' : row.code;
     const tdSubject = document.createElement('td');
@@ -48,7 +72,7 @@ function renderRows(rows) {
     const tdTotal = document.createElement('td');
     tdTotal.textContent = isLastOfVisit ? visitTotal : '';
 
-    tr.append(tdVisit, tdDate, tdAge, tdCode, tdSubject, tdMinutes, tdTotal);
+    tr.append(tdVisit, tdDate, tdAge, tdVariance, tdCode, tdSubject, tdMinutes, tdTotal);
     scheduleBody.appendChild(tr);
 
     if (isLastOfVisit) {
@@ -58,13 +82,23 @@ function renderRows(rows) {
 }
 
 function buildCsv(rows, pid) {
-  const header = ['Participant ID', 'Visit #', 'Visit Date', 'Child Age (months)', 'Lesson Code', 'Lesson Subject', 'Minutes'];
+  const header = [
+    'Participant ID',
+    'Visit #',
+    'Visit Date',
+    'Child Age (months)',
+    'Variance from Standard Sequence',
+    'Lesson Code',
+    'Lesson Subject',
+    'Minutes',
+  ];
   const lines = [header.join(',')];
 
   rows.forEach((row) => {
     const age = row.ageM < 0 ? 'Prenatal' : row.ageM;
     const subject = `"${row.subject.replace(/"/g, '""')}"`;
-    lines.push([pid, row.visit, fmtDate(row.date), age, row.code, subject, row.minutes].join(','));
+    const variance = formatVariance(row.standardAgeM, row.ageM);
+    lines.push([pid, row.visit, fmtDate(row.date), age, variance, row.code, subject, row.minutes].join(','));
   });
 
   return lines.join('\n');
