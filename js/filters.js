@@ -63,9 +63,22 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
 
   const { start, end } = getLessonAgeRange(lesson);
   const useTolerance = participant?.pacing === 'standard';
+  const foundationCatchUp =
+    toBool(lesson?.foundation) &&
+    Number.isFinite(lesson?.seqAge) &&
+    lesson.seqAge < 0 &&
+    Number.isFinite(lesson?.upToAge) &&
+    lesson.upToAge > 0;
+  const hasPostBirthVisit =
+    Number.isFinite(participant?.firstVisitAgeM) &&
+    participant.firstVisitAgeM >= 0 &&
+    Number.isFinite(childAgeM) &&
+    childAgeM >= 0;
 
   if (!participant?.isPregnant && start < 0) {
-    return false;
+    if (!(foundationCatchUp && hasPostBirthVisit)) {
+      return false;
+    }
   }
 
   if (Number.isFinite(end)) {
@@ -75,8 +88,9 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
   }
 
   if (Number.isFinite(start)) {
+    const baseStart = foundationCatchUp && hasPostBirthVisit ? 0 : start;
     const effectiveStart =
-      useTolerance && start >= 0 ? Math.max(0, start - AGE_TOLERANCE_MONTHS) : start;
+      useTolerance && baseStart >= 0 ? Math.max(0, baseStart - AGE_TOLERANCE_MONTHS) : baseStart;
     return childAgeM >= effectiveStart;
   }
 
