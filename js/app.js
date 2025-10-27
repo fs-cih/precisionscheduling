@@ -23,7 +23,6 @@ async function handleGenerate() {
       isFirstTimeParent: selection.isFTP,
       isPregnant: selection.isPregnant,
       pacing: selection.pacing,
-      agePriority: selection.agePriority,
       topics: selection.topics,
       completedLessons: selection.completedLessons,
     };

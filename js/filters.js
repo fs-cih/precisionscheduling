@@ -67,17 +67,9 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
     return false;
   }
 
-  const priority = participant?.agePriority ?? 'standard';
-  if (priority === 'appropriate') {
-    if (Number.isFinite(end)) {
-      return childAgeM <= end;
-    }
-    return true;
-  }
-
   if (Number.isFinite(end)) {
-    const effectiveEnd = end + AGE_TOLERANCE_MONTHS;
-    if (childAgeM > effectiveEnd) {
+    const maximumAllowedAge = end + AGE_TOLERANCE_MONTHS;
+    if (childAgeM > maximumAllowedAge) {
       return false;
     }
   }

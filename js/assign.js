@@ -260,7 +260,7 @@ function getTargetAge(lesson) {
   return start;
 }
 
-function calculateScore(lesson, visitAgeM, priority) {
+function calculateScore(lesson, visitAgeM) {
   const { start, end } = getLessonAgeRange(lesson);
   const target = getTargetAge(lesson);
   const tolerance = AGE_TOLERANCE_MONTHS;
@@ -272,15 +272,11 @@ function calculateScore(lesson, visitAgeM, priority) {
     score += diff - tolerance;
   }
 
-  if (priority !== 'appropriate' && Number.isFinite(start)) {
+  if (Number.isFinite(start)) {
     const earlyThreshold = start >= 0 ? Math.max(0, start - tolerance) : start;
     if (visitAgeM < earlyThreshold) {
       score += (earlyThreshold - visitAgeM) * 10;
     }
-  }
-
-  if (priority === 'appropriate' && Number.isFinite(end) && visitAgeM > end) {
-    score += (visitAgeM - end) * 10;
   }
 
   return score;
@@ -367,7 +363,6 @@ export function assignLessons(visits, participant, lessons) {
     }
   }
 
-  const priority = participant?.agePriority ?? 'standard';
 
   for (const lesson of lessonsToSchedule) {
     let bestVisit = null;
@@ -380,7 +375,7 @@ export function assignLessons(visits, participant, lessons) {
         continue;
       }
 
-      const score = calculateScore(lesson, visit.ageM, priority);
+      const score = calculateScore(lesson, visit.ageM);
       const projectedMinutes = visit.totalMinutes + getLessonMinutes(lesson);
       const assignmentCount = visit.assignments.length;
       const shouldSelect =
