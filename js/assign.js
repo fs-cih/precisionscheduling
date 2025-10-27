@@ -46,7 +46,7 @@ function getHolidayBlackoutReason(date) {
   }
 
   if (isLateDecember(date)) {
-    return 'No lesson scheduled';
+    return 'No lesson scheduled (end of year holidays)';
   }
 
   return null;
@@ -437,7 +437,11 @@ export function assignLessons(visits, participant, lessons) {
 
   for (const visit of visitInfos) {
     if (!visit.assignments.length) {
-      const message = visit.blackoutReason ?? 'No lesson scheduled';
+      const message =
+        visit.blackoutReason ??
+        (isLateDecember(visit.date)
+          ? 'No lesson scheduled (end of year holidays)'
+          : 'No lesson scheduled (excess capacity)');
       rows.push({
         visit: visit.index + 1,
         date: visit.date,
