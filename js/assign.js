@@ -56,7 +56,7 @@ function isFirstHalfOfDecember(date) {
   return date.getMonth() === 11 && date.getDate() <= 14;
 }
 
-function canPlaceLesson(visit, lesson, participant, topics) {
+function canPlaceLesson(visit, lesson, participantCtx, topics) {
   if (!visit || visit.blocked) {
     return false;
   }
@@ -65,7 +65,7 @@ function canPlaceLesson(visit, lesson, participant, topics) {
     return false;
   }
 
-  return shouldPull(lesson, participant, topics, visit.ageM);
+  return shouldPull(lesson, participantCtx, topics, visit.ageM);
 }
 
 function addLessonToVisit(visit, lesson) {
@@ -81,7 +81,14 @@ function removeLessonFromVisit(visit, index) {
   return removed;
 }
 
-function tryFillVisitWithLesson(targetVisit, unscheduledCodes, lessonsByCode, participant, topics, donorVisits) {
+function tryFillVisitWithLesson(
+  targetVisit,
+  unscheduledCodes,
+  lessonsByCode,
+  participantCtx,
+  topics,
+  donorVisits,
+) {
   if (!targetVisit || targetVisit.blocked || targetVisit.assignments.length >= targetVisit.maxSlots) {
     return false;
   }
@@ -91,7 +98,7 @@ function tryFillVisitWithLesson(targetVisit, unscheduledCodes, lessonsByCode, pa
     .filter(Boolean);
 
   for (const lesson of unscheduledLessons) {
-    if (canPlaceLesson(targetVisit, lesson, participant, topics)) {
+    if (canPlaceLesson(targetVisit, lesson, participantCtx, topics)) {
       addLessonToVisit(targetVisit, lesson);
       unscheduledCodes.delete(lesson.code);
       return true;
@@ -112,7 +119,7 @@ function tryFillVisitWithLesson(targetVisit, unscheduledCodes, lessonsByCode, pa
       if (lesson?.code === 'YGC11') {
         continue;
       }
-      if (!canPlaceLesson(targetVisit, lesson, participant, topics)) {
+      if (!canPlaceLesson(targetVisit, lesson, participantCtx, topics)) {
         continue;
       }
 
@@ -143,8 +150,8 @@ function getDonorVisits(visitInfos, excluded = [], preferLater = false) {
     });
 }
 
-function ensureEarlyVisitLessons(visitInfos, unscheduledCodes, lessonsByCode, participant, topics) {
-  if (participant?.pacing !== 'standard') {
+function ensureEarlyVisitLessons(visitInfos, unscheduledCodes, lessonsByCode, participantCtx, topics) {
+  if (participantCtx?.pacing !== 'standard') {
     return;
   }
 
@@ -156,12 +163,18 @@ function ensureEarlyVisitLessons(visitInfos, unscheduledCodes, lessonsByCode, pa
     }
 
     const donors = getDonorVisits(visitInfos, [visit], true);
-    tryFillVisitWithLesson(visit, unscheduledCodes, lessonsByCode, participant, topics, donors);
+    tryFillVisitWithLesson(visit, unscheduledCodes, lessonsByCode, participantCtx, topics, donors);
   }
 }
 
-function ensureNoConsecutiveEmptyVisits(visitInfos, unscheduledCodes, lessonsByCode, participant, topics) {
-  if (participant?.pacing !== 'standard') {
+function ensureNoConsecutiveEmptyVisits(
+  visitInfos,
+  unscheduledCodes,
+  lessonsByCode,
+  participantCtx,
+  topics,
+) {
+  if (participantCtx?.pacing !== 'standard') {
     return;
   }
 
@@ -177,17 +190,17 @@ function ensureNoConsecutiveEmptyVisits(visitInfos, unscheduledCodes, lessonsByC
 
     if (current.assignments.length === 0) {
       const donors = getDonorVisits(visitInfos, [current, next], true);
-      tryFillVisitWithLesson(current, unscheduledCodes, lessonsByCode, participant, topics, donors);
+      tryFillVisitWithLesson(current, unscheduledCodes, lessonsByCode, participantCtx, topics, donors);
     }
 
     if (next.assignments.length === 0) {
       const donors = getDonorVisits(visitInfos, [current, next], true);
-      tryFillVisitWithLesson(next, unscheduledCodes, lessonsByCode, participant, topics, donors);
+      tryFillVisitWithLesson(next, unscheduledCodes, lessonsByCode, participantCtx, topics, donors);
     }
   }
 }
 
-function ensureEarlyDecemberLesson(visitInfos, unscheduledCodes, lessonsByCode, participant, topics) {
+function ensureEarlyDecemberLesson(visitInfos, unscheduledCodes, lessonsByCode, participantCtx, topics) {
   const decemberTargets = visitInfos.filter(
     (visit) => !visit.blocked && isFirstHalfOfDecember(visit.date),
   );
@@ -206,14 +219,20 @@ function ensureEarlyDecemberLesson(visitInfos, unscheduledCodes, lessonsByCode, 
   );
 
   for (const target of decemberTargets) {
-    if (tryFillVisitWithLesson(target, unscheduledCodes, lessonsByCode, participant, topics, donorVisits)) {
+    if (tryFillVisitWithLesson(target, unscheduledCodes, lessonsByCode, participantCtx, topics, donorVisits)) {
       return;
     }
   }
 }
 
-function ensureLessonsInCloseIntervals(visitInfos, participant, unscheduledCodes, lessonsByCode, topics) {
-  if (participant?.pacing !== 'standard') {
+function ensureLessonsInCloseIntervals(
+  visitInfos,
+  participantCtx,
+  unscheduledCodes,
+  lessonsByCode,
+  topics,
+) {
+  if (participantCtx?.pacing !== 'standard') {
     return;
   }
 
@@ -244,11 +263,20 @@ function ensureLessonsInCloseIntervals(visitInfos, participant, unscheduledCodes
         visit.assignments.length > 1,
     );
 
-    if (tryFillVisitWithLesson(current, unscheduledCodes, lessonsByCode, participant, topics, donorVisits)) {
+    if (
+      tryFillVisitWithLesson(
+        current,
+        unscheduledCodes,
+        lessonsByCode,
+        participantCtx,
+        topics,
+        donorVisits,
+      )
+    ) {
       continue;
     }
 
-    tryFillVisitWithLesson(next, unscheduledCodes, lessonsByCode, participant, topics, donorVisits);
+    tryFillVisitWithLesson(next, unscheduledCodes, lessonsByCode, participantCtx, topics, donorVisits);
   }
 }
 
@@ -285,7 +313,6 @@ function calculateScore(lesson, visitAgeM) {
 export function assignLessons(visits, participant, lessons) {
   const rows = [];
   const lessonPool = Array.isArray(lessons) ? [...lessons] : [];
-  const topics = participant?.topics ?? {};
 
   const lessonsByCode = new Map(
     lessonPool.filter((lesson) => typeof lesson?.code === 'string').map((lesson) => [lesson.code, lesson]),
@@ -311,6 +338,12 @@ export function assignLessons(visits, participant, lessons) {
     }
   });
 
+  const activeVisits = visitInfos.filter((visit) => !visit.blocked);
+  const firstVisitAgeM =
+    activeVisits.length > 0 ? Math.min(...activeVisits.map((visit) => visit.ageM)) : null;
+  const participantCtx = { ...participant, firstVisitAgeM };
+  const topics = participantCtx?.topics ?? {};
+
   const eligibleCodes = new Set();
   const markEligibility = (lesson) => {
     if (!lesson?.code) {
@@ -320,7 +353,7 @@ export function assignLessons(visits, participant, lessons) {
       if (visit.blocked) {
         continue;
       }
-      if (shouldPull(lesson, participant, topics, visit.ageM)) {
+      if (shouldPull(lesson, participantCtx, topics, visit.ageM)) {
         eligibleCodes.add(lesson.code);
         return;
       }
@@ -336,7 +369,7 @@ export function assignLessons(visits, participant, lessons) {
     [finalLesson] = lessonPool.splice(finalLessonIndex, 1);
     const lastEligibleVisit = [...visitInfos]
       .reverse()
-      .find((visit) => canPlaceLesson(visit, finalLesson, participant, topics));
+      .find((visit) => canPlaceLesson(visit, finalLesson, participantCtx, topics));
 
     if (lastEligibleVisit) {
       addLessonToVisit(lastEligibleVisit, finalLesson);
@@ -346,7 +379,6 @@ export function assignLessons(visits, participant, lessons) {
   const lessonsToSchedule = lessonPool.slice().sort((a, b) => getTargetAge(a) - getTargetAge(b));
   const unscheduled = new Set(lessonsToSchedule.map((lesson) => lesson.code));
 
-  const activeVisits = visitInfos.filter((visit) => !visit.blocked);
   let availableSlots = activeVisits.reduce(
     (total, visit) => total + Math.max(visit.maxSlots - visit.assignments.length, 0),
     0,
@@ -371,7 +403,7 @@ export function assignLessons(visits, participant, lessons) {
     let bestAssignmentCount = Infinity;
 
     for (const visit of visitInfos) {
-      if (!canPlaceLesson(visit, lesson, participant, topics)) {
+      if (!canPlaceLesson(visit, lesson, participantCtx, topics)) {
         continue;
       }
 
@@ -403,10 +435,10 @@ export function assignLessons(visits, participant, lessons) {
     unscheduled.delete(lesson.code);
   }
 
-  ensureEarlyVisitLessons(visitInfos, unscheduled, lessonsByCode, participant, topics);
-  ensureNoConsecutiveEmptyVisits(visitInfos, unscheduled, lessonsByCode, participant, topics);
-  ensureLessonsInCloseIntervals(visitInfos, participant, unscheduled, lessonsByCode, topics);
-  ensureEarlyDecemberLesson(visitInfos, unscheduled, lessonsByCode, participant, topics);
+  ensureEarlyVisitLessons(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
+  ensureNoConsecutiveEmptyVisits(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
+  ensureLessonsInCloseIntervals(visitInfos, participantCtx, unscheduled, lessonsByCode, topics);
+  ensureEarlyDecemberLesson(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
 
   for (const visit of visitInfos) {
     if (!visit.assignments.length) {
