@@ -25,7 +25,6 @@ async function handleGenerate() {
       pacing: selection.pacing,
       agePriority: selection.agePriority,
       topics: selection.topics,
-      preferredVisitDuration: selection.preferredVisitDuration,
       completedLessons: selection.completedLessons,
     };
     const queue = filterLessons(lessons, participant);

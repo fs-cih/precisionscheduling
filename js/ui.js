@@ -7,7 +7,6 @@ const definedEl = document.getElementById('definedPref');
 const birthEl = document.getElementById('birthDate');
 const pregEl = document.getElementById('pregnant');
 const statusEl = document.getElementById('status');
-const visitDurationEl = document.getElementById('visitDuration');
 const completedLessonsEl = document.getElementById('completedLessons');
 
 function updateDefinedState() {
@@ -37,8 +36,6 @@ export function resetForm() {
   if (pacingEl) pacingEl.value = 'standard';
   if (definedEl) definedEl.value = '';
 
-  if (visitDurationEl) visitDurationEl.value = '90';
-
   const ftpEl = document.getElementById('ftp');
   if (ftpEl) ftpEl.value = 'no';
 
@@ -67,11 +64,6 @@ export function readSelections() {
 
   const birth = parseDate(birthEl?.value);
   const first = parseDate(document.getElementById('firstLesson')?.value);
-  const parsedDuration = Number.parseInt(visitDurationEl?.value ?? '', 10);
-  const preferredVisitDuration = Number.isNaN(parsedDuration)
-    ? 90
-    : Math.max(0, parsedDuration);
-
   return {
     pid: document.getElementById('pid')?.value.trim() ?? '',
     pacing: pacingEl?.value ?? 'standard',
@@ -88,7 +80,6 @@ export function readSelections() {
       sti: Boolean(document.getElementById('topic_sti')?.checked),
       substance: Boolean(document.getElementById('topic_substance')?.checked),
     },
-    preferredVisitDuration,
     completedLessons: completedLessonsEl
       ? Array.from(completedLessonsEl.selectedOptions).map((option) => option.value)
       : [],

@@ -78,10 +78,6 @@ select{
   font-size:12px;
 }
 
-.visit-duration-tip{
-  grid-column: 2 / 3;
-}
-
 .status-message{
   margin-top:12px;
 }
