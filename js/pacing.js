@@ -3,8 +3,12 @@ import { addDays, addMonths } from './dates.js';
 export function generateVisits(pacing, definedPref, birth, first) {
   const thirdBirthday = addMonths(birth, 36);
 
-  const visits = [new Date(thirdBirthday)];
-  let current = new Date(thirdBirthday);
+  if (first.getTime() >= thirdBirthday.getTime()) {
+    return [];
+  }
+
+  const visits = [new Date(first)];
+  let current = visits[0];
 
   const postpartum3 = addMonths(birth, 3);
   const postpartum6 = addMonths(birth, 6);
@@ -32,46 +36,20 @@ export function generateVisits(pacing, definedPref, birth, first) {
     return 60;
   };
 
-  if (pacing === 'defined') {
-    const step = stepFor(first);
-    if (Number.isFinite(step) && step > 0) {
-      while (true) {
-        const candidate = addDays(current, -step);
-        if (candidate.getTime() < first.getTime()) {
-          break;
-        }
-        visits.push(new Date(candidate));
-        current = candidate;
-      }
+  while (true) {
+    const step = stepFor(current);
+    if (!Number.isFinite(step) || step <= 0) {
+      break;
     }
-  } else {
-    const candidateSteps = [7, 14, 30, 60];
-    while (current.getTime() > first.getTime()) {
-      let matched = false;
-      for (const step of candidateSteps) {
-        const candidate = addDays(current, -step);
-        if (candidate.getTime() < first.getTime()) {
-          continue;
-        }
-        if (stepFor(candidate) === step) {
-          visits.push(new Date(candidate));
-          current = candidate;
-          matched = true;
-          break;
-        }
-      }
-      if (!matched) {
-        break;
-      }
+
+    const candidate = addDays(current, step);
+    if (candidate.getTime() >= thirdBirthday.getTime()) {
+      break;
     }
-  }
 
-  const includeFirst = visits.some((visit) => visit.getTime() === first.getTime());
-  if (!includeFirst) {
-    visits.push(new Date(first));
+    visits.push(candidate);
+    current = candidate;
   }
-
-  visits.sort((a, b) => a.getTime() - b.getTime());
 
   return visits;
 }
