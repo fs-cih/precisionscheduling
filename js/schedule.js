@@ -76,6 +76,7 @@ export function updateSchedule(schedule, pid) {
     totalVisits = 0,
     visitsUsed = 0,
     overflowCount = 0,
+    skippedCount = 0,
     removedVisits = 0,
   } = schedule ?? {};
 
@@ -98,10 +99,25 @@ export function updateSchedule(schedule, pid) {
       const overflowWord = overflowCount === 1 ? 'lesson' : 'lessons';
       summaryText += ` Unable to place ${overflowCount} ${overflowWord}; visit capacity exceeded.`;
     }
+
+    if (skippedCount > 0) {
+      const skippedWord = skippedCount === 1 ? 'lesson' : 'lessons';
+      summaryText += ` Skipped ${skippedCount} ${skippedWord} with no eligible visits.`;
+    }
   } else {
     summaryText = totalVisits
       ? `No lessons could be scheduled. Planned visits: ${totalVisits}.`
       : 'No lessons could be scheduled.';
+
+    if (overflowCount > 0) {
+      const overflowWord = overflowCount === 1 ? 'lesson' : 'lessons';
+      summaryText += ` Unable to place ${overflowCount} ${overflowWord}; visit capacity exceeded.`;
+    }
+
+    if (skippedCount > 0) {
+      const skippedWord = skippedCount === 1 ? 'lesson' : 'lessons';
+      summaryText += ` ${skippedCount} ${skippedWord} were skipped due to ineligible visits.`;
+    }
   }
 
   if (summaryEl) {
@@ -111,7 +127,7 @@ export function updateSchedule(schedule, pid) {
   }
 
   if (resultsCard) {
-    const shouldShow = rows.length > 0 || overflowCount > 0 || removedVisits > 0;
+    const shouldShow = rows.length > 0 || overflowCount > 0 || removedVisits > 0 || skippedCount > 0;
     resultsCard.style.display = shouldShow ? 'block' : 'none';
   }
 
