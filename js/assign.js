@@ -454,6 +454,16 @@ export function assignLessons(visits, participant, lessons) {
   const participantCtx = { ...participant, firstVisitAgeM };
   const topics = participantCtx?.topics ?? {};
 
+  const prenatalVisits = activeVisits.filter((visit) => visit.ageM < 0);
+  const prenatalEligibleLessonCount = lessonPool.filter((lesson) => {
+    if (!lesson?.code || !prenatalVisits.length) {
+      return false;
+    }
+    return prenatalVisits.some((visit) => shouldPull(lesson, participantCtx, topics, visit.ageM));
+  }).length;
+  const restrictToSingleSlot =
+    prenatalVisits.length > 0 && prenatalVisits.length > prenatalEligibleLessonCount;
+
   const eligibleCodes = new Set();
   const markEligibility = (lesson) => {
     if (!lesson?.code) {
@@ -495,7 +505,7 @@ export function assignLessons(visits, participant, lessons) {
   );
   let shortage = lessonsToSchedule.length - availableSlots;
 
-  if (shortage > 0 && activeVisits.length > 0) {
+  if (!restrictToSingleSlot && shortage > 0 && activeVisits.length > 0) {
     let indexOffset = 0;
     while (shortage > 0) {
       const targetVisit = activeVisits[indexOffset % activeVisits.length];
@@ -562,7 +572,7 @@ export function assignLessons(visits, participant, lessons) {
       }
     }
 
-    if (!bestVisit && fallbackVisit) {
+    if (!bestVisit && fallbackVisit && !restrictToSingleSlot) {
       fallbackVisit.maxSlots += 1;
       bestVisit = fallbackVisit;
     }
