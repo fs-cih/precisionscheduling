@@ -151,18 +151,120 @@ function getDonorVisits(visitInfos, excluded = [], preferLater = false) {
 }
 
 function ensureEarlyVisitLessons(visitInfos, unscheduledCodes, lessonsByCode, participantCtx, topics) {
-  if (participantCtx?.pacing !== 'standard') {
-    return;
-  }
-
-  const earlyVisits = visitInfos.filter((visit) => !visit.blocked).slice(0, 6);
+  const earlyVisits = visitInfos.filter((visit) => !visit.blocked).slice(0, 5);
+  const earlyVisitSet = new Set(earlyVisits);
 
   for (const visit of earlyVisits) {
     if (visit.assignments.length > 0) {
       continue;
     }
 
-    const donors = getDonorVisits(visitInfos, [visit], true);
+    const donors = getDonorVisits(visitInfos, [visit], true).filter(
+      (donor) => donor.assignments.length > 1 || !earlyVisitSet.has(donor),
+    );
+    tryFillVisitWithLesson(visit, unscheduledCodes, lessonsByCode, participantCtx, topics, donors);
+  }
+}
+
+function distributeExcessCapacity(
+  visitInfos,
+  unscheduledCodes,
+  lessonsByCode,
+  participantCtx,
+  topics,
+) {
+  const activeVisits = visitInfos.filter((visit) => !visit.blocked);
+
+  if (!activeVisits.length) {
+    return;
+  }
+
+  const requiredVisitCount = Math.min(5, activeVisits.length);
+  const requiredVisits = activeVisits.slice(0, requiredVisitCount);
+  const requiredVisitSet = new Set(requiredVisits);
+
+  for (const visit of requiredVisits) {
+    if (visit.assignments.length > 0) {
+      continue;
+    }
+
+    const donors = getDonorVisits(visitInfos, [visit], true).filter(
+      (donor) => donor.assignments.length > 1 || !requiredVisitSet.has(donor),
+    );
+    tryFillVisitWithLesson(visit, unscheduledCodes, lessonsByCode, participantCtx, topics, donors);
+  }
+
+  if (activeVisits.length <= requiredVisitCount) {
+    return;
+  }
+
+  const remainingVisits = activeVisits.slice(requiredVisitCount);
+  let remainingEmptyCount = remainingVisits.filter((visit) => visit.assignments.length === 0).length;
+
+  if (remainingEmptyCount === 0) {
+    return;
+  }
+
+  const desiredEmptyVisits = new Set();
+  const step = remainingVisits.length / remainingEmptyCount;
+  let position = step / 2;
+
+  for (let i = 0; i < remainingEmptyCount; i += 1) {
+    let rawIndex = Math.round(position - 0.5);
+    rawIndex = Math.min(Math.max(rawIndex, 0), remainingVisits.length - 1);
+
+    let visit = remainingVisits[rawIndex];
+    let offset = 1;
+
+    while (desiredEmptyVisits.has(visit) && (rawIndex + offset < remainingVisits.length || rawIndex - offset >= 0)) {
+      const forwardIndex = rawIndex + offset;
+      const backwardIndex = rawIndex - offset;
+
+      if (forwardIndex < remainingVisits.length && !desiredEmptyVisits.has(remainingVisits[forwardIndex])) {
+        visit = remainingVisits[forwardIndex];
+        break;
+      }
+
+      if (backwardIndex >= 0 && !desiredEmptyVisits.has(remainingVisits[backwardIndex])) {
+        visit = remainingVisits[backwardIndex];
+        break;
+      }
+
+      offset += 1;
+    }
+
+    desiredEmptyVisits.add(visit);
+    position += step;
+  }
+
+  for (const visit of remainingVisits) {
+    if (visit.assignments.length > 0 || desiredEmptyVisits.has(visit)) {
+      continue;
+    }
+
+    const donors = getDonorVisits(visitInfos, [visit], true).filter(
+      (donor) => donor.assignments.length > 1 || desiredEmptyVisits.has(donor),
+    );
+
+    if (!donors.length) {
+      continue;
+    }
+
+    tryFillVisitWithLesson(visit, unscheduledCodes, lessonsByCode, participantCtx, topics, donors);
+  }
+
+  for (const visit of requiredVisits) {
+    if (visit.assignments.length > 0) {
+      continue;
+    }
+
+    const donors = getDonorVisits(visitInfos, [visit], true).filter(
+      (donor) => donor.assignments.length > 1 || !requiredVisitSet.has(donor),
+    );
+    if (!donors.length) {
+      continue;
+    }
+
     tryFillVisitWithLesson(visit, unscheduledCodes, lessonsByCode, participantCtx, topics, donors);
   }
 }
@@ -436,6 +538,7 @@ export function assignLessons(visits, participant, lessons) {
   }
 
   ensureEarlyVisitLessons(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
+  distributeExcessCapacity(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
   ensureNoConsecutiveEmptyVisits(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
   ensureLessonsInCloseIntervals(visitInfos, participantCtx, unscheduled, lessonsByCode, topics);
   ensureEarlyDecemberLesson(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
