@@ -92,12 +92,28 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
     const baseStart = foundationCatchUp && hasPostBirthVisit ? 0 : start;
     let effectiveStart = baseStart;
 
-    if (useTolerance && baseStart >= 0) {
-      effectiveStart = Math.max(0, baseStart - AGE_TOLERANCE_MONTHS);
-    } else if (baseStart < 0 && Number.isFinite(childAgeM) && childAgeM < 0) {
-      // Allow late prenatal visits (e.g., 1–2 months before delivery) to pull lessons
-      // whose sequence age is also prenatal.
-      effectiveStart = baseStart - PRENATAL_TOLERANCE_MONTHS;
+    if (baseStart >= 0) {
+      if (useTolerance) {
+        effectiveStart = Math.max(0, baseStart - AGE_TOLERANCE_MONTHS);
+      }
+    } else if (Number.isFinite(childAgeM)) {
+      if (childAgeM < 0) {
+        const tolerance = useTolerance
+          ? Math.max(AGE_TOLERANCE_MONTHS, PRENATAL_TOLERANCE_MONTHS)
+          : PRENATAL_TOLERANCE_MONTHS;
+        let earliest = baseStart - tolerance;
+
+        if (Number.isFinite(end) && end <= 0) {
+          const prenatalWindow = Math.abs(end - baseStart);
+          if (prenatalWindow > 0) {
+            earliest = Math.min(earliest, baseStart - prenatalWindow);
+          }
+        }
+
+        effectiveStart = Math.min(effectiveStart, earliest);
+      } else {
+        effectiveStart = baseStart;
+      }
     }
 
     return childAgeM >= effectiveStart;
