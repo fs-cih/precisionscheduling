@@ -26,7 +26,7 @@ export function generateVisits(pacing, definedPref, birth, first, duration = 'up
   const postpartum6 = addMonths(birth, 6);
   const postpartum22 = addMonths(birth, 22);
 
-  const useDefinedPacing = duration !== 'up_to_due_date' && pacing === 'defined';
+  const useDefinedPacing = pacing === 'defined';
 
   const stepFor = (date) => {
     if (useDefinedPacing) {
