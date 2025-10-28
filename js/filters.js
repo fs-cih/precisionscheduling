@@ -1,5 +1,6 @@
 const YES = 'yes';
 export const AGE_TOLERANCE_MONTHS = 3;
+const PRENATAL_TOLERANCE_MONTHS = 1;
 
 function toBool(value) {
   if (typeof value === 'string') {
@@ -89,8 +90,16 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
 
   if (Number.isFinite(start)) {
     const baseStart = foundationCatchUp && hasPostBirthVisit ? 0 : start;
-    const effectiveStart =
-      useTolerance && baseStart >= 0 ? Math.max(0, baseStart - AGE_TOLERANCE_MONTHS) : baseStart;
+    let effectiveStart = baseStart;
+
+    if (useTolerance && baseStart >= 0) {
+      effectiveStart = Math.max(0, baseStart - AGE_TOLERANCE_MONTHS);
+    } else if (baseStart < 0 && Number.isFinite(childAgeM) && childAgeM < 0) {
+      // Allow late prenatal visits (e.g., 1–2 months before delivery) to pull lessons
+      // whose sequence age is also prenatal.
+      effectiveStart = baseStart - PRENATAL_TOLERANCE_MONTHS;
+    }
+
     return childAgeM >= effectiveStart;
   }
 
