@@ -17,7 +17,13 @@ async function handleGenerate() {
     setStatus('Building schedule…');
 
     const lessons = await getLessons();
-    const visits = generateVisits(selection.pacing, selection.definedPref, selection.birth, selection.first);
+    const visits = generateVisits(
+      selection.pacing,
+      selection.definedPref,
+      selection.birth,
+      selection.first,
+      selection.scheduleDuration,
+    );
     const participant = {
       birth: selection.birth,
       isFirstTimeParent: selection.isFTP,

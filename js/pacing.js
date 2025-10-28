@@ -1,9 +1,21 @@
 import { addDays, addMonths } from './dates.js';
 
-export function generateVisits(pacing, definedPref, birth, first) {
+export function generateVisits(pacing, definedPref, birth, first, duration = 'up_to_3rd_birthday') {
   const thirdBirthday = addMonths(birth, 36);
+  const endDate = (() => {
+    switch (duration) {
+      case 'up_to_due_date':
+        return new Date(birth);
+      case '6_months':
+        return addMonths(first, 6);
+      case '12_months':
+        return addMonths(first, 12);
+      default:
+        return thirdBirthday;
+    }
+  })();
 
-  if (first.getTime() >= thirdBirthday.getTime()) {
+  if (first.getTime() >= thirdBirthday.getTime() || first.getTime() >= endDate.getTime()) {
     return [];
   }
 
@@ -14,8 +26,10 @@ export function generateVisits(pacing, definedPref, birth, first) {
   const postpartum6 = addMonths(birth, 6);
   const postpartum22 = addMonths(birth, 22);
 
+  const useDefinedPacing = duration !== 'up_to_due_date' && pacing === 'defined';
+
   const stepFor = (date) => {
-    if (pacing === 'defined') {
+    if (useDefinedPacing) {
       switch (definedPref) {
         case 'weekly':
           return 7;
@@ -43,7 +57,7 @@ export function generateVisits(pacing, definedPref, birth, first) {
     }
 
     const candidate = addDays(current, step);
-    if (candidate.getTime() >= thirdBirthday.getTime()) {
+    if (candidate.getTime() >= endDate.getTime()) {
       break;
     }
 
