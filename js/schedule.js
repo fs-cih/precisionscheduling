@@ -107,57 +107,55 @@ function buildCsv(rows, pid) {
 export function updateSchedule(schedule, pid) {
   const {
     rows = [],
-    totalVisits = 0,
-    visitsUsed = 0,
     overflowCount = 0,
     skippedCount = 0,
     removedVisits = 0,
+    expectedLessonCount = 0,
   } = schedule ?? {};
 
   renderRows(rows);
 
-  let summaryText = '';
-  if (rows.length) {
-    const scheduledLessons = rows.filter((row) => !row.placeholder);
-    const lessonCount = scheduledLessons.length;
-    const lessonsWord = lessonCount === 1 ? 'lesson' : 'lessons';
-    const visitWord = visitsUsed === 1 ? 'visit' : 'visits';
-    summaryText = `Scheduled ${lessonCount} ${lessonsWord} across ${visitsUsed} ${visitWord} (planned: ${totalVisits}).`;
+  const scheduledLessons = rows.filter((row) => !row.placeholder);
+  const lessonCount = scheduledLessons.length;
+  const expectedLessons = Number.isFinite(expectedLessonCount)
+    ? expectedLessonCount
+    : 0;
 
-    if (removedVisits > 0) {
-      const removedWord = removedVisits === 1 ? 'visit' : 'visits';
-      summaryText += ` No lessons scheduled for ${removedVisits} ${removedWord}.`;
-    }
+  const visitLessonCounts = scheduledLessons.reduce((counts, row) => {
+    const currentCount = counts.get(row.visit) ?? 0;
+    counts.set(row.visit, currentCount + 1);
+    return counts;
+  }, new Map());
 
-    if (overflowCount > 0) {
-      const overflowWord = overflowCount === 1 ? 'lesson' : 'lessons';
-      summaryText += ` Unable to place ${overflowCount} ${overflowWord}; visit capacity exceeded.`;
-    }
+  const visitsScheduled = visitLessonCounts.size;
+  const visitsWithMultipleLessons = Array.from(visitLessonCounts.values()).filter(
+    (count) => count >= 2,
+  ).length;
 
-    if (skippedCount > 0) {
-      const skippedWord = skippedCount === 1 ? 'lesson' : 'lessons';
-      summaryText += ` Skipped ${skippedCount} ${skippedWord} with no eligible visits.`;
-    }
-  } else {
-    summaryText = totalVisits
-      ? `No lessons could be scheduled. Planned visits: ${totalVisits}.`
-      : 'No lessons could be scheduled.';
+  const summaryLines = [
+    `Visits scheduled: ${visitsScheduled}`,
+    `Lessons expected to be scheduled based on selected parameters: ${expectedLessons}`,
+    `Lessons actually scheduled: ${lessonCount}`,
+    `Visits with 2+ lessons scheduled: ${visitsWithMultipleLessons}`,
+  ];
 
-    if (overflowCount > 0) {
-      const overflowWord = overflowCount === 1 ? 'lesson' : 'lessons';
-      summaryText += ` Unable to place ${overflowCount} ${overflowWord}; visit capacity exceeded.`;
-    }
+  if (removedVisits > 0) {
+    summaryLines.push(`Visits with no lessons scheduled: ${removedVisits}`);
+  }
 
-    if (skippedCount > 0) {
-      const skippedWord = skippedCount === 1 ? 'lesson' : 'lessons';
-      summaryText += ` ${skippedCount} ${skippedWord} were skipped due to ineligible visits.`;
-    }
+  if (overflowCount > 0) {
+    summaryLines.push(`Lessons not scheduled due to visit capacity: ${overflowCount}`);
+  }
+
+  if (skippedCount > 0) {
+    summaryLines.push(`Lessons skipped; no eligible visits: ${skippedCount}`);
   }
 
   if (summaryEl) {
-    summaryEl.textContent = summaryText;
-    summaryEl.classList.toggle('warn', overflowCount > 0);
-    summaryEl.classList.toggle('muted', overflowCount === 0);
+    summaryEl.innerHTML = summaryLines.map((line) => `<div>${line}</div>`).join('');
+    const hasWarning = overflowCount > 0 || skippedCount > 0 || lessonCount !== expectedLessons;
+    summaryEl.classList.toggle('warn', hasWarning);
+    summaryEl.classList.toggle('muted', !hasWarning);
   }
 
   if (resultsCard) {
@@ -181,7 +179,7 @@ export function clearSchedule() {
     resultsCard.style.display = 'none';
   }
   if (summaryEl) {
-    summaryEl.textContent = '';
+    summaryEl.innerHTML = '';
   }
   if (exportBtn) {
     resetExport();

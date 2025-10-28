@@ -672,5 +672,6 @@ export function assignLessons(visits, participant, lessons) {
     overflowCount,
     skippedCount,
     removedVisits: placeholderVisitCount,
+    expectedLessonCount: eligibleCodes.size,
   };
 }
