@@ -7,6 +7,7 @@ const birthEl = document.getElementById('birthDate');
 const pregEl = document.getElementById('pregnant');
 const statusEl = document.getElementById('status');
 const completedLessonsEl = document.getElementById('completedLessons');
+const scheduleDurationEl = document.getElementById('scheduleDuration');
 
 function updateDefinedState() {
   if (!pacingEl || !definedEl) return;
@@ -40,6 +41,8 @@ export function resetForm() {
 
   if (birthEl) birthEl.value = '';
 
+  if (scheduleDurationEl) scheduleDurationEl.value = 'up_to_3rd_birthday';
+
   const topicIds = ['topic_cfw', 'topic_fp', 'topic_nutrition', 'topic_sti', 'topic_substance'];
   topicIds.forEach((id) => {
     const el = document.getElementById(id);
@@ -65,6 +68,7 @@ export function readSelections() {
     pid: document.getElementById('pid')?.value.trim() ?? '',
     pacing: pacingEl?.value ?? 'standard',
     definedPref: definedEl?.value || null,
+    scheduleDuration: scheduleDurationEl?.value ?? 'up_to_3rd_birthday',
     isFTP: Boolean(isFTP),
     isPregnant: Boolean(isPregnant),
     birth,
