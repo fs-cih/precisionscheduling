@@ -56,8 +56,16 @@ function isFirstHalfOfDecember(date) {
   return date.getMonth() === 11 && date.getDate() <= 14;
 }
 
-function canPlaceLesson(visit, lesson, participantCtx, topics) {
+function canPullLesson(visit, lesson, participantCtx, topics) {
   if (!visit || visit.blocked) {
+    return false;
+  }
+
+  return shouldPull(lesson, participantCtx, topics, visit.ageM);
+}
+
+function canPlaceLesson(visit, lesson, participantCtx, topics) {
+  if (!canPullLesson(visit, lesson, participantCtx, topics)) {
     return false;
   }
 
@@ -65,7 +73,7 @@ function canPlaceLesson(visit, lesson, participantCtx, topics) {
     return false;
   }
 
-  return shouldPull(lesson, participantCtx, topics, visit.ageM);
+  return true;
 }
 
 function addLessonToVisit(visit, lesson) {
@@ -504,29 +512,59 @@ export function assignLessons(visits, participant, lessons) {
     let bestProjectedMinutes = Infinity;
     let bestAssignmentCount = Infinity;
 
+    let fallbackVisit = null;
+    let fallbackScore = Infinity;
+    let fallbackProjectedMinutes = Infinity;
+    let fallbackAssignmentCount = Infinity;
+
     for (const visit of visitInfos) {
-      if (!canPlaceLesson(visit, lesson, participantCtx, topics)) {
+      if (!canPullLesson(visit, lesson, participantCtx, topics)) {
         continue;
       }
 
       const score = calculateScore(lesson, visit.ageM);
       const projectedMinutes = visit.totalMinutes + getLessonMinutes(lesson);
       const assignmentCount = visit.assignments.length;
-      const shouldSelect =
-        score < bestScore ||
-        (score === bestScore &&
-          (projectedMinutes < bestProjectedMinutes ||
-            (projectedMinutes === bestProjectedMinutes &&
-              (assignmentCount < bestAssignmentCount ||
-                (assignmentCount === bestAssignmentCount &&
-                  (!bestVisit || visit.index < bestVisit.index))))));
 
-      if (shouldSelect) {
-        bestScore = score;
-        bestVisit = visit;
-        bestProjectedMinutes = projectedMinutes;
-        bestAssignmentCount = assignmentCount;
+      if (assignmentCount < visit.maxSlots) {
+        const shouldSelect =
+          score < bestScore ||
+          (score === bestScore &&
+            (projectedMinutes < bestProjectedMinutes ||
+              (projectedMinutes === bestProjectedMinutes &&
+                (assignmentCount < bestAssignmentCount ||
+                  (assignmentCount === bestAssignmentCount &&
+                    (!bestVisit || visit.index < bestVisit.index))))));
+
+        if (shouldSelect) {
+          bestScore = score;
+          bestVisit = visit;
+          bestProjectedMinutes = projectedMinutes;
+          bestAssignmentCount = assignmentCount;
+        }
+        continue;
       }
+
+      const shouldFallback =
+        score < fallbackScore ||
+        (score === fallbackScore &&
+          (projectedMinutes < fallbackProjectedMinutes ||
+            (projectedMinutes === fallbackProjectedMinutes &&
+              (assignmentCount < fallbackAssignmentCount ||
+                (assignmentCount === fallbackAssignmentCount &&
+                  (!fallbackVisit || visit.index < fallbackVisit.index))))));
+
+      if (shouldFallback) {
+        fallbackScore = score;
+        fallbackVisit = visit;
+        fallbackProjectedMinutes = projectedMinutes;
+        fallbackAssignmentCount = assignmentCount;
+      }
+    }
+
+    if (!bestVisit && fallbackVisit) {
+      fallbackVisit.maxSlots += 1;
+      bestVisit = fallbackVisit;
     }
 
     if (!bestVisit) {
