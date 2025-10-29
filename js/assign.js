@@ -187,6 +187,21 @@ function distributeExcessCapacity(
     return;
   }
 
+  const hasEligibleLessonForVisit = (visit) => {
+    if (!visit) {
+      return false;
+    }
+
+    for (const code of unscheduledCodes) {
+      const lesson = lessonsByCode.get(code);
+      if (lesson && canPlaceLesson(visit, lesson, participantCtx, topics)) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const requiredVisitCount = Math.min(5, activeVisits.length);
   const requiredVisits = activeVisits.slice(0, requiredVisitCount);
   const requiredVisitSet = new Set(requiredVisits);
@@ -246,7 +261,14 @@ function distributeExcessCapacity(
   }
 
   for (const visit of remainingVisits) {
-    if (visit.assignments.length > 0 || desiredEmptyVisits.has(visit)) {
+    if (visit.assignments.length > 0) {
+      continue;
+    }
+
+    const isDesiredEmpty = desiredEmptyVisits.has(visit);
+    const hasEligibleLesson = hasEligibleLessonForVisit(visit);
+
+    if (isDesiredEmpty && !hasEligibleLesson) {
       continue;
     }
 
@@ -254,7 +276,7 @@ function distributeExcessCapacity(
       (donor) => donor.assignments.length > 1 || desiredEmptyVisits.has(donor),
     );
 
-    if (!donors.length) {
+    if (!donors.length && !hasEligibleLesson) {
       continue;
     }
 
@@ -266,10 +288,11 @@ function distributeExcessCapacity(
       continue;
     }
 
+    const hasEligibleLesson = hasEligibleLessonForVisit(visit);
     const donors = getDonorVisits(visitInfos, [visit], true).filter(
       (donor) => donor.assignments.length > 1 || !requiredVisitSet.has(donor),
     );
-    if (!donors.length) {
+    if (!donors.length && !hasEligibleLesson) {
       continue;
     }
 

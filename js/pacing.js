@@ -57,12 +57,20 @@ export function generateVisits(pacing, definedPref, birth, first, duration = 'up
     }
 
     const candidate = addDays(current, step);
-    if (candidate.getTime() >= endDate.getTime()) {
+    if (candidate.getTime() > endDate.getTime()) {
       break;
     }
 
     visits.push(candidate);
     current = candidate;
+  }
+
+  if (
+    duration === 'up_to_due_date' &&
+    visits.length > 0 &&
+    visits[visits.length - 1].getTime() < endDate.getTime()
+  ) {
+    visits.push(new Date(endDate));
   }
 
   return visits;
