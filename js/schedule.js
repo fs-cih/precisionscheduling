@@ -4,14 +4,23 @@ const scheduleBody = document.getElementById('scheduleBody');
 const resultsCard = document.getElementById('resultsCard');
 const summaryEl = document.getElementById('summary');
 const exportBtn = document.getElementById('exportBtn');
+const logBtn = document.getElementById('logBtn');
 
 function resetExport() {
   exportBtn.disabled = true;
   exportBtn.onclick = null;
 }
 
-function download(filename, text) {
-  const blob = new Blob([text], { type: 'text/plain' });
+function resetLog() {
+  if (!logBtn) {
+    return;
+  }
+  logBtn.disabled = true;
+  logBtn.onclick = null;
+}
+
+function download(filename, text, mimeType = 'text/plain') {
+  const blob = new Blob([text], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
@@ -104,6 +113,43 @@ function buildCsv(rows, pid) {
   return lines.join('\n');
 }
 
+function escapeCsv(value) {
+  if (typeof value !== 'string') {
+    return value ?? '';
+  }
+
+  if (value.includes('"') || value.includes(',') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+
+  return value;
+}
+
+function buildLogCsv(eligibleScheduled, eligibleNotScheduled, notEligibleNotScheduled) {
+  const header = [
+    'Eligible Scheduled',
+    'Eligible Not Scheduled',
+    'Not Eligible Not Scheduled',
+  ];
+  const maxLength = Math.max(
+    eligibleScheduled.length,
+    eligibleNotScheduled.length,
+    notEligibleNotScheduled.length,
+  );
+  const lines = [header.join(',')];
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const row = [
+      eligibleScheduled[index] ?? '',
+      eligibleNotScheduled[index] ?? '',
+      notEligibleNotScheduled[index] ?? '',
+    ].map(escapeCsv);
+    lines.push(row.join(','));
+  }
+
+  return lines.join('\n');
+}
+
 export function updateSchedule(schedule, pid) {
   const {
     rows = [],
@@ -111,6 +157,9 @@ export function updateSchedule(schedule, pid) {
     skippedCount = 0,
     removedVisits = 0,
     expectedLessonCount = 0,
+    eligibleScheduled = [],
+    eligibleNotScheduled = [],
+    notEligibleNotScheduled = [],
   } = schedule ?? {};
 
   renderRows(rows);
@@ -152,22 +201,39 @@ export function updateSchedule(schedule, pid) {
   }
 
   if (summaryEl) {
-    summaryEl.innerHTML = summaryLines.map((line) => `<div>${line}</div>`).join('');
-    const hasWarning = overflowCount > 0 || skippedCount > 0 || lessonCount !== expectedLessons;
-    summaryEl.classList.toggle('warn', hasWarning);
-    summaryEl.classList.toggle('muted', !hasWarning);
+    if (summaryLines.length) {
+      summaryEl.innerHTML = summaryLines.map((line) => `<div>${line}</div>`).join('');
+    } else {
+      summaryEl.innerHTML = '';
+    }
   }
 
+  const shouldShow =
+    rows.length > 0 || overflowCount > 0 || removedVisits > 0 || skippedCount > 0;
+
   if (resultsCard) {
-    const shouldShow = rows.length > 0 || overflowCount > 0 || removedVisits > 0 || skippedCount > 0;
     resultsCard.style.display = shouldShow ? 'block' : 'none';
   }
 
   if (rows.length) {
     exportBtn.disabled = false;
-    exportBtn.onclick = () => download('schedule.csv', buildCsv(rows, pid));
+    exportBtn.onclick = () => download('schedule.csv', buildCsv(rows, pid), 'text/csv');
   } else {
     resetExport();
+  }
+
+  if (logBtn) {
+    if (shouldShow) {
+      logBtn.disabled = false;
+      logBtn.onclick = () =>
+        download(
+          'scheduling-log.csv',
+          buildLogCsv(eligibleScheduled, eligibleNotScheduled, notEligibleNotScheduled),
+          'text/csv',
+        );
+    } else {
+      resetLog();
+    }
   }
 }
 
@@ -184,4 +250,5 @@ export function clearSchedule() {
   if (exportBtn) {
     resetExport();
   }
+  resetLog();
 }

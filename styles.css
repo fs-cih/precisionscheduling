@@ -103,6 +103,13 @@ button{
   border-color:var(--brand);
 }
 
+.schedule-footer{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
 table{
   width:100%;
   border-collapse: collapse;

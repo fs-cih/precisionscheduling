@@ -465,6 +465,9 @@ export function assignLessons(visits, participant, lessons) {
     prenatalVisits.length > 0 && prenatalVisits.length > prenatalEligibleLessonCount;
 
   const eligibleCodes = new Set();
+  const eligibleScheduledCodes = new Set();
+  const eligibleNotScheduledCodes = new Set();
+  const notEligibleNotScheduledCodes = new Set();
   const markEligibility = (lesson) => {
     if (!lesson?.code) {
       return;
@@ -622,6 +625,9 @@ export function assignLessons(visits, participant, lessons) {
         minutes: Number.isFinite(lesson?.minutes) ? lesson.minutes : 0,
         standardAgeM: Number.isFinite(standardAge) ? standardAge : null,
       });
+      if (eligibleCodes.has(lesson.code)) {
+        eligibleScheduledCodes.add(lesson.code);
+      }
     }
   }
 
@@ -652,16 +658,28 @@ export function assignLessons(visits, participant, lessons) {
   for (const code of unscheduled) {
     if (eligibleCodes.has(code)) {
       overflowCount += 1;
+      if (typeof code === 'string') {
+        eligibleNotScheduledCodes.add(code);
+      }
     } else {
       skippedCount += 1;
+      if (typeof code === 'string') {
+        notEligibleNotScheduledCodes.add(code);
+      }
     }
   }
 
   if (finalLesson && !scheduledFinal) {
     if (eligibleCodes.has(finalLesson.code)) {
       overflowCount += 1;
+      if (typeof finalLesson.code === 'string') {
+        eligibleNotScheduledCodes.add(finalLesson.code);
+      }
     } else {
       skippedCount += 1;
+      if (typeof finalLesson.code === 'string') {
+        notEligibleNotScheduledCodes.add(finalLesson.code);
+      }
     }
   }
 
@@ -673,5 +691,8 @@ export function assignLessons(visits, participant, lessons) {
     skippedCount,
     removedVisits: placeholderVisitCount,
     expectedLessonCount: eligibleCodes.size,
+    eligibleScheduled: Array.from(eligibleScheduledCodes).sort(),
+    eligibleNotScheduled: Array.from(eligibleNotScheduledCodes).sort(),
+    notEligibleNotScheduled: Array.from(notEligibleNotScheduledCodes).sort(),
   };
 }

@@ -106,7 +106,6 @@
   <!-- Results -->
   <div class="card" id="resultsCard" style="display:none;">
     <div class="section-title">Generated Schedule</div>
-    <div id="summary" class="muted" style="margin-bottom:8px;"></div>
     <div style="max-height:60vh; overflow:auto; border:1px solid var(--line); border-radius:10px;">
       <table id="scheduleTable">
         <thead>
@@ -123,6 +122,10 @@
         </thead>
         <tbody id="scheduleBody"></tbody>
       </table>
+    </div>
+    <div class="schedule-footer">
+      <div id="summary"></div>
+      <button id="logBtn" type="button" disabled>View Scheduling Log</button>
     </div>
   </div>
 
