@@ -97,10 +97,48 @@ button{
   cursor:pointer;
 }
 
+.btns button{
+  transition:background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+button:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
+
 .primary{
   background:var(--brand);
   color:white;
   border-color:var(--brand);
+}
+
+#exportBtn:not(:disabled){
+  background:#22c55e;
+  border-color:#16a34a;
+  color:#fff;
+}
+
+#exportBtn:not(:disabled):hover{
+  background:#16a34a;
+}
+
+#resetBtn{
+  background:#800000;
+  border-color:#6b0000;
+  color:#fff;
+}
+
+#resetBtn:hover{
+  background:#6b0000;
+}
+
+#logBtn{
+  background:#fff;
+  color:var(--ink);
+}
+
+#logBtn:not(:disabled):hover{
+  background:#f8fafc;
 }
 
 .schedule-footer{
@@ -112,6 +150,12 @@ button{
 
 .schedule-footer button{
   align-self:flex-start;
+}
+
+#summary{
+  font-size:13px;
+  color:#374151;
+  line-height:1.5;
 }
 
 table{
