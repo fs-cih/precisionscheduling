@@ -436,8 +436,18 @@ function calculateScore(lesson, visitAgeM) {
   if (Number.isFinite(start)) {
     const earlyThreshold = start >= 0 ? Math.max(0, start - tolerance) : start;
     if (visitAgeM < earlyThreshold) {
-      score += (earlyThreshold - visitAgeM) * 10;
+      const targetIsPrenatal = Number.isFinite(target) && target < 0;
+      const visitIsPrenatal = visitAgeM < 0;
+
+      if (!(targetIsPrenatal && visitIsPrenatal)) {
+        score += (earlyThreshold - visitAgeM) * 10;
+      }
     }
+  }
+
+  if (visitAgeM < 0) {
+    const prenatalBonus = Math.abs(visitAgeM) * 0.1;
+    score -= prenatalBonus;
   }
 
   return score;
