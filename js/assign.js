@@ -1,6 +1,9 @@
 import { monthsBetween } from './dates.js';
 import { AGE_TOLERANCE_MONTHS, getLessonAgeRange, shouldPull } from './filters.js';
 
+const ADDITIONAL_LESSON_PENALTY = 5;
+const MAX_AUTO_SLOT_INCREASES_PER_VISIT = 2;
+
 function getLessonMinutes(lesson) {
   return Number.isFinite(lesson?.minutes) ? lesson.minutes : 0;
 }
@@ -453,6 +456,34 @@ function calculateScore(lesson, visitAgeM) {
   return score;
 }
 
+function isBetterCandidate(candidate, currentBest) {
+  if (!candidate) {
+    return false;
+  }
+
+  if (!currentBest) {
+    return true;
+  }
+
+  if (candidate.weightedScore !== currentBest.weightedScore) {
+    return candidate.weightedScore < currentBest.weightedScore;
+  }
+
+  if (candidate.score !== currentBest.score) {
+    return candidate.score < currentBest.score;
+  }
+
+  if (candidate.projectedMinutes !== currentBest.projectedMinutes) {
+    return candidate.projectedMinutes < currentBest.projectedMinutes;
+  }
+
+  if (candidate.assignmentCount !== currentBest.assignmentCount) {
+    return candidate.assignmentCount < currentBest.assignmentCount;
+  }
+
+  return candidate.index < currentBest.index;
+}
+
 export function assignLessons(visits, participant, lessons) {
   const rows = [];
   const lessonPool = Array.isArray(lessons) ? [...lessons] : [];
@@ -470,6 +501,7 @@ export function assignLessons(visits, participant, lessons) {
       assignments: [],
       totalMinutes: 0,
       maxSlots: 1,
+      autoSlotIncreases: 0,
       blocked: Boolean(blackoutReason),
       blackoutReason,
     };
@@ -542,26 +574,41 @@ export function assignLessons(visits, participant, lessons) {
   let shortage = lessonsToSchedule.length - availableSlots;
 
   if (!restrictToSingleSlot && shortage > 0 && activeVisits.length > 0) {
-    let indexOffset = 0;
     while (shortage > 0) {
-      const targetVisit = activeVisits[indexOffset % activeVisits.length];
+      const eligibleForIncrease = activeVisits.filter(
+        (visit) => visit.autoSlotIncreases < MAX_AUTO_SLOT_INCREASES_PER_VISIT,
+      );
+
+      if (!eligibleForIncrease.length) {
+        break;
+      }
+
+      let targetVisit = eligibleForIncrease[0];
+
+      for (const visit of eligibleForIncrease) {
+        const targetAssignments = targetVisit.assignments.length;
+        const visitAssignments = visit.assignments.length;
+
+        if (
+          visitAssignments < targetAssignments ||
+          (visitAssignments === targetAssignments &&
+            (visit.autoSlotIncreases < targetVisit.autoSlotIncreases ||
+              (visit.autoSlotIncreases === targetVisit.autoSlotIncreases && visit.index < targetVisit.index)))
+        ) {
+          targetVisit = visit;
+        }
+      }
+
       targetVisit.maxSlots += 1;
+      targetVisit.autoSlotIncreases += 1;
       shortage -= 1;
-      indexOffset += 1;
     }
   }
 
 
   for (const lesson of lessonsToSchedule) {
-    let bestVisit = null;
-    let bestScore = Infinity;
-    let bestProjectedMinutes = Infinity;
-    let bestAssignmentCount = Infinity;
-
-    let fallbackVisit = null;
-    let fallbackScore = Infinity;
-    let fallbackProjectedMinutes = Infinity;
-    let fallbackAssignmentCount = Infinity;
+    let bestCandidate = null;
+    let fallbackCandidate = null;
 
     for (const visit of visitInfos) {
       if (!canPullLesson(visit, lesson, participantCtx, topics)) {
@@ -571,53 +618,50 @@ export function assignLessons(visits, participant, lessons) {
       const score = calculateScore(lesson, visit.ageM);
       const projectedMinutes = visit.totalMinutes + getLessonMinutes(lesson);
       const assignmentCount = visit.assignments.length;
+      const weightedScore = score + assignmentCount * ADDITIONAL_LESSON_PENALTY;
+      const candidate = {
+        visit,
+        score,
+        weightedScore,
+        projectedMinutes,
+        assignmentCount,
+        index: visit.index,
+      };
 
       if (assignmentCount < visit.maxSlots) {
-        const shouldSelect =
-          score < bestScore ||
-          (score === bestScore &&
-            (projectedMinutes < bestProjectedMinutes ||
-              (projectedMinutes === bestProjectedMinutes &&
-                (assignmentCount < bestAssignmentCount ||
-                  (assignmentCount === bestAssignmentCount &&
-                    (!bestVisit || visit.index < bestVisit.index))))));
-
-        if (shouldSelect) {
-          bestScore = score;
-          bestVisit = visit;
-          bestProjectedMinutes = projectedMinutes;
-          bestAssignmentCount = assignmentCount;
+        if (isBetterCandidate(candidate, bestCandidate)) {
+          bestCandidate = candidate;
         }
         continue;
       }
 
-      const shouldFallback =
-        score < fallbackScore ||
-        (score === fallbackScore &&
-          (projectedMinutes < fallbackProjectedMinutes ||
-            (projectedMinutes === fallbackProjectedMinutes &&
-              (assignmentCount < fallbackAssignmentCount ||
-                (assignmentCount === fallbackAssignmentCount &&
-                  (!fallbackVisit || visit.index < fallbackVisit.index))))));
+      if (restrictToSingleSlot) {
+        continue;
+      }
 
-      if (shouldFallback) {
-        fallbackScore = score;
-        fallbackVisit = visit;
-        fallbackProjectedMinutes = projectedMinutes;
-        fallbackAssignmentCount = assignmentCount;
+      if (visit.autoSlotIncreases >= MAX_AUTO_SLOT_INCREASES_PER_VISIT) {
+        continue;
+      }
+
+      if (isBetterCandidate(candidate, fallbackCandidate)) {
+        fallbackCandidate = candidate;
       }
     }
 
-    if (!bestVisit && fallbackVisit && !restrictToSingleSlot) {
-      fallbackVisit.maxSlots += 1;
-      bestVisit = fallbackVisit;
+    if (!bestCandidate && fallbackCandidate && !restrictToSingleSlot) {
+      const { visit } = fallbackCandidate;
+      if (visit.autoSlotIncreases < MAX_AUTO_SLOT_INCREASES_PER_VISIT) {
+        visit.maxSlots += 1;
+        visit.autoSlotIncreases += 1;
+        bestCandidate = fallbackCandidate;
+      }
     }
 
-    if (!bestVisit) {
+    if (!bestCandidate) {
       continue;
     }
 
-    addLessonToVisit(bestVisit, lesson);
+    addLessonToVisit(bestCandidate.visit, lesson);
     unscheduled.delete(lesson.code);
   }
 
