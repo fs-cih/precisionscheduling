@@ -14,12 +14,37 @@ function updateDefinedState() {
   definedEl.disabled = pacingEl.value !== 'defined';
 }
 
+function updatePregnancyState() {
+  if (!birthEl || !pregEl) return;
+
+  const birthDate = parseDate(birthEl.value);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (birthDate && birthDate.getTime() > today.getTime()) {
+    pregEl.value = 'yes';
+    pregEl.disabled = true;
+    pregEl.dataset.locked = 'true';
+  } else {
+    const wasLocked = pregEl.dataset.locked === 'true';
+    pregEl.disabled = false;
+    if (wasLocked) {
+      pregEl.value = 'no';
+    }
+    delete pregEl.dataset.locked;
+  }
+}
+
 export function initUI() {
   updateDefinedState();
+  updatePregnancyState();
 
   pacingEl?.addEventListener('change', () => {
     updateDefinedState();
   });
+
+  birthEl?.addEventListener('change', updatePregnancyState);
+  birthEl?.addEventListener('input', updatePregnancyState);
 
   populateCompletedLessons();
 }
@@ -37,7 +62,11 @@ export function resetForm() {
   const ftpEl = document.getElementById('ftp');
   if (ftpEl) ftpEl.value = 'no';
 
-  if (pregEl) pregEl.value = 'no';
+  if (pregEl) {
+    pregEl.value = 'no';
+    pregEl.disabled = false;
+    delete pregEl.dataset.locked;
+  }
 
   if (birthEl) birthEl.value = '';
 
