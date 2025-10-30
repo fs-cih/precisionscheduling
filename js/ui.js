@@ -21,18 +21,21 @@ function updatePregnancyState() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  if (birthDate && birthDate.getTime() > today.getTime()) {
-    pregEl.value = 'yes';
-    pregEl.disabled = true;
-    pregEl.dataset.locked = 'true';
-  } else {
-    const wasLocked = pregEl.dataset.locked === 'true';
-    pregEl.disabled = false;
-    if (wasLocked) {
-      pregEl.value = 'no';
-    }
-    delete pregEl.dataset.locked;
+  const normalizedBirth = birthDate ? new Date(birthDate) : null;
+  if (normalizedBirth) {
+    normalizedBirth.setHours(0, 0, 0, 0);
   }
+
+  if (!normalizedBirth) {
+    pregEl.disabled = false;
+    delete pregEl.dataset.locked;
+    return;
+  }
+
+  const isPastOrToday = normalizedBirth.getTime() <= today.getTime();
+  pregEl.value = isPastOrToday ? 'no' : 'yes';
+  pregEl.disabled = true;
+  pregEl.dataset.locked = 'true';
 }
 
 export function initUI() {
