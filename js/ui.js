@@ -21,16 +21,17 @@ function updatePregnancyState() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  if (birthDate && birthDate.getTime() > today.getTime()) {
-    pregEl.value = 'yes';
+  const normalizedBirth = birthDate ? new Date(birthDate) : null;
+  if (normalizedBirth) {
+    normalizedBirth.setHours(0, 0, 0, 0);
+  }
+
+  if (normalizedBirth && normalizedBirth.getTime() <= today.getTime()) {
+    pregEl.value = 'no';
     pregEl.disabled = true;
     pregEl.dataset.locked = 'true';
   } else {
-    const wasLocked = pregEl.dataset.locked === 'true';
     pregEl.disabled = false;
-    if (wasLocked) {
-      pregEl.value = 'no';
-    }
     delete pregEl.dataset.locked;
   }
 }
