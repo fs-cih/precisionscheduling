@@ -26,8 +26,12 @@ function updatePregnancyState() {
     normalizedBirth.setHours(0, 0, 0, 0);
   }
 
-  if (normalizedBirth && normalizedBirth.getTime() <= today.getTime()) {
-    pregEl.value = 'no';
+  if (normalizedBirth) {
+    if (normalizedBirth.getTime() < today.getTime()) {
+      pregEl.value = 'no';
+    } else {
+      pregEl.value = 'yes';
+    }
     pregEl.disabled = true;
     pregEl.dataset.locked = 'true';
   } else {
