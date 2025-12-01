@@ -194,10 +194,16 @@ export function updateSchedule(schedule, pid) {
 
   if (overflowCount > 0) {
     summaryLines.push(`Lessons not scheduled due to visit capacity: ${overflowCount}`);
+    if (eligibleNotScheduled.length > 0) {
+      summaryLines.push(`<ul>${eligibleNotScheduled.map((code) => `<li>${code}</li>`).join('')}</ul>`);
+    }
   }
 
   if (skippedCount > 0) {
     summaryLines.push(`Lessons skipped; no eligible visits: ${skippedCount}`);
+    if (notEligibleNotScheduled.length > 0) {
+      summaryLines.push(`<ul>${notEligibleNotScheduled.map((code) => `<li>${code}</li>`).join('')}</ul>`);
+    }
   }
 
   if (summaryEl) {
