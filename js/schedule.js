@@ -125,6 +125,16 @@ function escapeCsv(value) {
   return value;
 }
 
+function escapeHtml(value) {
+  if (typeof value !== 'string') {
+    return value ?? '';
+  }
+  
+  const div = document.createElement('div');
+  div.textContent = value;
+  return div.innerHTML;
+}
+
 function buildLogCsv(eligibleScheduled, eligibleNotScheduled, notEligibleNotScheduled) {
   const header = [
     'Eligible Scheduled',
@@ -195,14 +205,14 @@ export function updateSchedule(schedule, pid) {
   if (overflowCount > 0) {
     summaryLines.push(`Lessons not scheduled due to visit capacity: ${overflowCount}`);
     if (eligibleNotScheduled.length > 0) {
-      summaryLines.push(`<ul>${eligibleNotScheduled.map((code) => `<li>${code}</li>`).join('')}</ul>`);
+      summaryLines.push(`<ul>${eligibleNotScheduled.map((code) => `<li>${escapeHtml(code)}</li>`).join('')}</ul>`);
     }
   }
 
   if (skippedCount > 0) {
     summaryLines.push(`Lessons skipped; no eligible visits: ${skippedCount}`);
     if (notEligibleNotScheduled.length > 0) {
-      summaryLines.push(`<ul>${notEligibleNotScheduled.map((code) => `<li>${code}</li>`).join('')}</ul>`);
+      summaryLines.push(`<ul>${notEligibleNotScheduled.map((code) => `<li>${escapeHtml(code)}</li>`).join('')}</ul>`);
     }
   }
 
