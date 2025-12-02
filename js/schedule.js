@@ -210,7 +210,7 @@ export function updateSchedule(schedule, pid) {
   }
 
   if (skippedCount > 0) {
-    summaryLines.push(`Lessons skipped; no eligible visits: ${skippedCount}`);
+    summaryLines.push(`Some selected parameters exclude these potential lessons: ${skippedCount}`);
     if (notEligibleNotScheduled.length > 0) {
       summaryLines.push(`<ul>${notEligibleNotScheduled.map((code) => `<li>${escapeHtml(code)}</li>`).join('')}</ul>`);
     }
