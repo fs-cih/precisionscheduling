@@ -736,12 +736,16 @@ export function assignLessons(visits, participant, lessons) {
     if (eligibleCodes.has(code)) {
       overflowCount += 1;
       if (typeof code === 'string') {
-        eligibleNotScheduledCodes.add(code);
+        const lesson = lessonsByCode.get(code);
+        const displayText = lesson?.subject ? `${code}: ${lesson.subject}` : code;
+        eligibleNotScheduledCodes.add(displayText);
       }
     } else {
       skippedCount += 1;
       if (typeof code === 'string') {
-        notEligibleNotScheduledCodes.add(code);
+        const lesson = lessonsByCode.get(code);
+        const displayText = lesson?.subject ? `${code}: ${lesson.subject}` : code;
+        notEligibleNotScheduledCodes.add(displayText);
       }
     }
   }
@@ -750,12 +754,14 @@ export function assignLessons(visits, participant, lessons) {
     if (eligibleCodes.has(finalLesson.code)) {
       overflowCount += 1;
       if (typeof finalLesson.code === 'string') {
-        eligibleNotScheduledCodes.add(finalLesson.code);
+        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}` : finalLesson.code;
+        eligibleNotScheduledCodes.add(displayText);
       }
     } else {
       skippedCount += 1;
       if (typeof finalLesson.code === 'string') {
-        notEligibleNotScheduledCodes.add(finalLesson.code);
+        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}` : finalLesson.code;
+        notEligibleNotScheduledCodes.add(displayText);
       }
     }
   }
