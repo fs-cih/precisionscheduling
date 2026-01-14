@@ -246,10 +246,6 @@ ol li{
   margin:8px 0;
 }
 
-ol.muted li{
-  color:var(--muted);
-}
-
 .sr{
   position:absolute;
   left:-9999px;

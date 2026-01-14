@@ -13,7 +13,7 @@ export function generatePdfChecklist(scheduleData, formData) {
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 54; // 0.75 inches = 54 points
   const lineGap = 6;
-  let yPos = 20;
+  let yPos = margin;
   let currentPage = 1;
 
   // Title
