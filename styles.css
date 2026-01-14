@@ -241,6 +241,7 @@ select[multiple]{
   min-height:176px;
 }
 
+/* Responsive adjustments for small mobile devices */
 @media (max-width: 480px){
   .header{
     flex-wrap:wrap;
