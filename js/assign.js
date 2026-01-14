@@ -336,6 +336,58 @@ function ensureNoConsecutiveEmptyVisits(
   }
 }
 
+function ensureDefinedPacingSpacing(
+  visitInfos,
+  unscheduledCodes,
+  lessonsByCode,
+  participantCtx,
+  topics,
+) {
+  if (participantCtx?.pacing !== 'defined') {
+    return;
+  }
+
+  const isEmptyVisit = (visit) => Boolean(visit) && !visit.blocked && visit.assignments.length === 0;
+
+  for (let i = 0; i < visitInfos.length; i += 1) {
+    const visit = visitInfos[i];
+    if (!isEmptyVisit(visit)) {
+      continue;
+    }
+
+    const previous = visitInfos[i - 1];
+    const next = visitInfos[i + 1];
+
+    if ((previous && previous.blocked) || (next && next.blocked)) {
+      const donors = getDonorVisits(visitInfos, [visit], true);
+      tryFillVisitWithLesson(visit, unscheduledCodes, lessonsByCode, participantCtx, topics, donors);
+    }
+  }
+
+  let consecutiveEmpty = 0;
+
+  for (let i = 0; i < visitInfos.length; i += 1) {
+    const visit = visitInfos[i];
+
+    if (isEmptyVisit(visit)) {
+      consecutiveEmpty += 1;
+    } else {
+      consecutiveEmpty = 0;
+    }
+
+    if (consecutiveEmpty <= 2) {
+      continue;
+    }
+
+    const donors = getDonorVisits(visitInfos, [visit], true);
+    if (
+      tryFillVisitWithLesson(visit, unscheduledCodes, lessonsByCode, participantCtx, topics, donors)
+    ) {
+      consecutiveEmpty = 0;
+    }
+  }
+}
+
 function ensureEarlyDecemberLesson(visitInfos, unscheduledCodes, lessonsByCode, participantCtx, topics) {
   const decemberTargets = visitInfos.filter(
     (visit) => !visit.blocked && isFirstHalfOfDecember(visit.date),
@@ -667,6 +719,7 @@ export function assignLessons(visits, participant, lessons) {
 
   ensureEarlyVisitLessons(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
   distributeExcessCapacity(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
+  ensureDefinedPacingSpacing(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
   ensureNoConsecutiveEmptyVisits(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
   ensureLessonsInCloseIntervals(visitInfos, participantCtx, unscheduled, lessonsByCode, topics);
   ensureEarlyDecemberLesson(visitInfos, unscheduled, lessonsByCode, participantCtx, topics);
