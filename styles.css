@@ -23,10 +23,22 @@ body{
   padding:0 16px;
 }
 
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+}
+
 h1{
-  margin:0 0 16px 0;
+  margin:0;
   font-size:28px;
   color:#933725;
+}
+
+.logo{
+  height:96px;
+  width:auto;
 }
 
 .card{
@@ -227,4 +239,15 @@ th{
 
 select[multiple]{
   min-height:176px;
+}
+
+@media (max-width: 480px){
+  .header{
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  
+  .logo{
+    height:72px;
+  }
 }
