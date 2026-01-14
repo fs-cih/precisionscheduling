@@ -790,14 +790,16 @@ export function assignLessons(visits, participant, lessons) {
       overflowCount += 1;
       if (typeof code === 'string') {
         const lesson = lessonsByCode.get(code);
-        const displayText = lesson?.subject ? `${code}: ${lesson.subject}` : code;
+        const seqAge = Number.isFinite(lesson?.seqAge) ? ` (${lesson.seqAge})` : '';
+        const displayText = lesson?.subject ? `${code}: ${lesson.subject}${seqAge}` : code;
         eligibleNotScheduledCodes.add(displayText);
       }
     } else {
       skippedCount += 1;
       if (typeof code === 'string') {
         const lesson = lessonsByCode.get(code);
-        const displayText = lesson?.subject ? `${code}: ${lesson.subject}` : code;
+        const seqAge = Number.isFinite(lesson?.seqAge) ? ` (${lesson.seqAge})` : '';
+        const displayText = lesson?.subject ? `${code}: ${lesson.subject}${seqAge}` : code;
         notEligibleNotScheduledCodes.add(displayText);
       }
     }
@@ -807,13 +809,15 @@ export function assignLessons(visits, participant, lessons) {
     if (eligibleCodes.has(finalLesson.code)) {
       overflowCount += 1;
       if (typeof finalLesson.code === 'string') {
-        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}` : finalLesson.code;
+        const seqAge = Number.isFinite(finalLesson?.seqAge) ? ` (${finalLesson.seqAge})` : '';
+        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}${seqAge}` : finalLesson.code;
         eligibleNotScheduledCodes.add(displayText);
       }
     } else {
       skippedCount += 1;
       if (typeof finalLesson.code === 'string') {
-        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}` : finalLesson.code;
+        const seqAge = Number.isFinite(finalLesson?.seqAge) ? ` (${finalLesson.seqAge})` : '';
+        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}${seqAge}` : finalLesson.code;
         notEligibleNotScheduledCodes.add(displayText);
       }
     }
