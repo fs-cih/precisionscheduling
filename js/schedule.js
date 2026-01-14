@@ -100,6 +100,8 @@ function buildCsv(rows, pid) {
     'Lesson Code',
     'Lesson Subject',
     'Minutes',
+    'Date Delivered',
+    'Notes',
   ];
   const lines = [header.join(',')];
 
@@ -107,7 +109,7 @@ function buildCsv(rows, pid) {
     const age = row.ageM < 0 ? 'Prenatal' : row.ageM;
     const subject = `"${row.subject.replace(/"/g, '""')}"`;
     const variance = formatVariance(row.standardAgeM, row.ageM);
-    lines.push([pid, row.visit, fmtDate(row.date), age, variance, row.code, subject, row.minutes].join(','));
+    lines.push([pid, row.visit, fmtDate(row.date), age, variance, row.code, subject, row.minutes, '', ''].join(','));
   });
 
   return lines.join('\n');
