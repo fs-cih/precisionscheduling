@@ -35,7 +35,20 @@ async function handleGenerate() {
     const queue = filterLessons(lessons, participant);
     const schedule = assignLessons(visits, participant, queue);
 
-    updateSchedule(schedule, selection.pid);
+    // Prepare form data for PDF generation
+    const formData = {
+      pid: selection.pid,
+      firstLesson: selection.first,
+      scheduleDuration: selection.scheduleDuration,
+      pacing: selection.pacing,
+      definedPref: selection.definedPref,
+      birthDate: selection.birth,
+      isFirstTimeParent: selection.isFTP,
+      isPregnant: selection.isPregnant,
+      topics: selection.topics,
+    };
+
+    updateSchedule(schedule, selection.pid, formData);
     setStatus('');
   } catch (error) {
     console.error(error);
