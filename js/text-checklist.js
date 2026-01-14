@@ -26,8 +26,8 @@ export function generateTextChecklist(scheduleData, formData) {
   const durationMap = {
     up_to_3rd_birthday: "Up to youngest child's 3rd birthday",
     up_to_due_date: 'Up to due date',
-    6_months: '6 months from first visit',
-    12_months: '12 months from first visit',
+    '6_months': '6 months from first visit',
+    '12_months': '12 months from first visit',
   };
   addField(
     'Duration of Schedule',
