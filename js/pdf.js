@@ -12,22 +12,27 @@ export function generatePdfChecklist(scheduleData, formData) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
-  const lineHeight = 7;
+  const lineGap = 6;
   let yPos = 20;
   let currentPage = 1;
 
   // Title
+  const advanceLine = (multiplier = 1) => {
+    const fontSize = doc.currentPage?.fontSize ?? 10;
+    yPos += (fontSize + lineGap) * multiplier;
+  };
+
   doc.setFontSize(18);
   doc.setFont(undefined, 'bold');
   doc.text('Precision Schedule', margin, yPos);
-  yPos += lineHeight * 2;
+  advanceLine(1.8);
 
   // Helper to add a section heading
   const addSectionHeading = (text) => {
     doc.setFontSize(14);
     doc.setFont(undefined, 'bold');
     doc.text(text, margin, yPos);
-    yPos += lineHeight;
+    advanceLine();
     doc.setFontSize(10);
     doc.setFont(undefined, 'normal');
   };
@@ -36,7 +41,7 @@ export function generatePdfChecklist(scheduleData, formData) {
   const addField = (label, value) => {
     const text = `${label}: ${value || '______'}`;
     doc.text(text, margin, yPos);
-    yPos += lineHeight;
+    advanceLine();
   };
 
   // Helper to check if we need a new page
@@ -80,14 +85,14 @@ export function generatePdfChecklist(scheduleData, formData) {
   }
   addField('Pacing', pacingText);
   
-  yPos += lineHeight / 2;
+  advanceLine(0.8);
   checkNewPage();
 
   // Child Information
   addSectionHeading('Child Information');
   addField('Birth or Due Date of Youngest Child', formData.birthDate ? fmtDate(formData.birthDate) : '');
   
-  yPos += lineHeight / 2;
+  advanceLine(0.8);
   checkNewPage();
 
   // Participant (Primary Adult) Information
@@ -95,7 +100,7 @@ export function generatePdfChecklist(scheduleData, formData) {
   addField('Participant is First-Time Parent', formData.isFirstTimeParent ? 'Yes' : 'No');
   addField('Is the Participant Pregnant', formData.isPregnant ? 'Yes' : 'No');
   
-  yPos += lineHeight / 2;
+  advanceLine(0.8);
   checkNewPage();
 
   // Topics of Interest to Family
@@ -119,19 +124,19 @@ export function generatePdfChecklist(scheduleData, formData) {
   if (selectedTopics.length > 0) {
     selectedTopics.forEach(topic => {
       doc.text(`• ${topic}`, margin + 5, yPos);
-      yPos += lineHeight;
+      advanceLine();
     });
   } else {
     doc.text('None selected', margin, yPos);
-    yPos += lineHeight;
+    advanceLine();
   }
   
-  yPos += lineHeight;
+  advanceLine();
   checkNewPage(60);
 
   // Simplified Schedule
   addSectionHeading('Schedule');
-  yPos += lineHeight / 2;
+  advanceLine(0.8);
 
   // Group rows by visit
   const rows = scheduleData.rows || [];
@@ -151,12 +156,12 @@ export function generatePdfChecklist(scheduleData, formData) {
     // Draw a bold line above the lesson
     doc.setLineWidth(1);
     doc.line(margin, yPos - 2, pageWidth - margin, yPos - 2);
-    yPos += lineHeight / 2;
+    advanceLine(0.8);
 
     // Visit date
     doc.setFont(undefined, 'bold');
     doc.text(`Visit ${visitNum} - ${fmtDate(visitRows[0].date)}`, margin, yPos);
-    yPos += lineHeight;
+    advanceLine();
 
     // Lessons
     doc.setFont(undefined, 'normal');
@@ -165,19 +170,19 @@ export function generatePdfChecklist(scheduleData, formData) {
         ? row.subject 
         : `${row.code}: ${row.subject}`;
       doc.text(lessonText, margin + 5, yPos);
-      yPos += lineHeight;
+      advanceLine();
     });
 
-    yPos += lineHeight / 2;
+    advanceLine(0.8);
 
     // Space for notes
     doc.setFontSize(9);
     doc.text('Date Delivered: _______________', margin + 5, yPos);
-    yPos += lineHeight;
+    advanceLine();
     doc.text('Notes: ________________________________________', margin + 5, yPos);
-    yPos += lineHeight;
+    advanceLine();
     doc.text('      ________________________________________', margin + 5, yPos);
-    yPos += lineHeight * 1.5;
+    advanceLine(1.5);
     doc.setFontSize(10);
   });
 
