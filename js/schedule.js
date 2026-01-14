@@ -1,15 +1,25 @@
 import { fmtDate } from './dates.js';
+import { generatePdfChecklist } from './pdf.js';
 
 const scheduleBody = document.getElementById('scheduleBody');
 const resultsCard = document.getElementById('resultsCard');
 const instructionsCard = document.getElementById('instructionsCard');
 const summaryEl = document.getElementById('summary');
 const exportBtn = document.getElementById('exportBtn');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
 const logBtn = document.getElementById('logBtn');
 
 function resetExport() {
   exportBtn.disabled = true;
   exportBtn.onclick = null;
+}
+
+function resetPdfExport() {
+  if (!exportPdfBtn) {
+    return;
+  }
+  exportPdfBtn.disabled = true;
+  exportPdfBtn.onclick = null;
 }
 
 function resetLog() {
@@ -163,7 +173,7 @@ function buildLogCsv(eligibleScheduled, eligibleNotScheduled, notEligibleNotSche
   return lines.join('\n');
 }
 
-export function updateSchedule(schedule, pid) {
+export function updateSchedule(schedule, pid, formData = null) {
   const {
     rows = [],
     overflowCount = 0,
@@ -241,8 +251,17 @@ export function updateSchedule(schedule, pid) {
   if (rows.length) {
     exportBtn.disabled = false;
     exportBtn.onclick = () => download('schedule.csv', buildCsv(rows, pid), 'text/csv');
+    
+    if (exportPdfBtn && formData) {
+      exportPdfBtn.disabled = false;
+      exportPdfBtn.onclick = () => {
+        const pdfDoc = generatePdfChecklist(schedule, formData);
+        pdfDoc.save('precision-schedule-checklist.pdf');
+      };
+    }
   } else {
     resetExport();
+    resetPdfExport();
   }
 
   if (logBtn) {
@@ -276,5 +295,6 @@ export function clearSchedule() {
   if (exportBtn) {
     resetExport();
   }
+  resetPdfExport();
   resetLog();
 }
