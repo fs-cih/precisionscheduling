@@ -1,5 +1,6 @@
 import { fmtDate } from './dates.js';
 import { generatePdfChecklist } from './pdf.js';
+import { generateTextChecklist } from './text-checklist.js';
 
 const scheduleBody = document.getElementById('scheduleBody');
 const resultsCard = document.getElementById('resultsCard');
@@ -7,6 +8,7 @@ const instructionsCard = document.getElementById('instructionsCard');
 const summaryEl = document.getElementById('summary');
 const exportBtn = document.getElementById('exportBtn');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
+const exportTextBtn = document.getElementById('exportTextBtn');
 const logBtn = document.getElementById('logBtn');
 
 function resetExport() {
@@ -20,6 +22,14 @@ function resetPdfExport() {
   }
   exportPdfBtn.disabled = true;
   exportPdfBtn.onclick = null;
+}
+
+function resetTextExport() {
+  if (!exportTextBtn) {
+    return;
+  }
+  exportTextBtn.disabled = true;
+  exportTextBtn.onclick = null;
 }
 
 function resetLog() {
@@ -259,9 +269,18 @@ export function updateSchedule(schedule, pid, formData = null) {
         pdfDoc.save('precision-schedule-checklist.pdf');
       };
     }
+
+    if (exportTextBtn && formData) {
+      exportTextBtn.disabled = false;
+      exportTextBtn.onclick = () => {
+        const textDoc = generateTextChecklist(schedule, formData);
+        download('precision-schedule-checklist.doc', textDoc, 'application/msword');
+      };
+    }
   } else {
     resetExport();
     resetPdfExport();
+    resetTextExport();
   }
 
   if (logBtn) {
@@ -296,5 +315,6 @@ export function clearSchedule() {
     resetExport();
   }
   resetPdfExport();
+  resetTextExport();
   resetLog();
 }
