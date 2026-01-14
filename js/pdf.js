@@ -11,7 +11,7 @@ export function generatePdfChecklist(scheduleData, formData) {
   
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
+  const margin = 54; // 0.75 inches = 54 points
   const lineGap = 6;
   let yPos = 20;
   let currentPage = 1;
@@ -179,9 +179,10 @@ export function generatePdfChecklist(scheduleData, formData) {
     doc.setFontSize(9);
     doc.text('Date Delivered: _______________', margin + 5, yPos);
     advanceLine();
-    doc.text('Notes: ________________________________________', margin + 5, yPos);
+    doc.text('Notes:', margin + 5, yPos);
     advanceLine();
-    doc.text('      ________________________________________', margin + 5, yPos);
+    advanceLine();
+    advanceLine();
     advanceLine(1.5);
     doc.setFontSize(10);
   });
@@ -199,6 +200,6 @@ function addPageHeader(doc, pid, pageNum) {
     const pageWidth = doc.internal.pageSize.getWidth();
     const headerText = `Participant ID: ${pid || 'N/A'} | Page ${pageNum}`;
     const textWidth = doc.getTextWidth(headerText);
-    doc.text(headerText, pageWidth - textWidth - 20, 15);
+    doc.text(headerText, pageWidth - textWidth - 54, 15); // Changed from 20 to 54
   }
 }

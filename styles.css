@@ -131,14 +131,24 @@ button:disabled{
   border-color:var(--brand);
 }
 
-#exportBtn:not(:disabled){
+#exportPdfBtn:not(:disabled){
   background:#22c55e;
   border-color:#16a34a;
   color:#fff;
 }
 
-#exportBtn:not(:disabled):hover{
+#exportPdfBtn:not(:disabled):hover{
   background:#16a34a;
+}
+
+#exportBtn:not(:disabled){
+  background:#e5e7eb;
+  border-color:#d1d5db;
+  color:var(--ink);
+}
+
+#exportBtn:not(:disabled):hover{
+  background:#d1d5db;
 }
 
 #resetBtn{
@@ -234,6 +244,10 @@ ol{
 
 ol li{
   margin:8px 0;
+}
+
+ol.muted li{
+  color:var(--muted);
 }
 
 .sr{
