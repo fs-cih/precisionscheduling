@@ -14,6 +14,7 @@ export function generatePdfChecklist(scheduleData, formData) {
   const margin = 20;
   const lineHeight = 7;
   let yPos = 20;
+  let currentPage = 1;
 
   // Title
   doc.setFontSize(18);
@@ -42,9 +43,10 @@ export function generatePdfChecklist(scheduleData, formData) {
   const checkNewPage = (spaceNeeded = 20) => {
     if (yPos + spaceNeeded > pageHeight - margin) {
       doc.addPage();
+      currentPage++;
       yPos = margin;
       // Add header on new pages
-      addPageHeader(doc, formData.pid, doc.internal.getCurrentPageInfo().pageNumber);
+      addPageHeader(doc, formData.pid, currentPage);
     }
   };
 
