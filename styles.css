@@ -142,6 +142,16 @@ button:disabled{
   background:#16a34a;
 }
 
+#exportTextBtn:not(:disabled){
+  background:#2563eb;
+  border-color:#1d4ed8;
+  color:#fff;
+}
+
+#exportTextBtn:not(:disabled):hover{
+  background:#1d4ed8;
+}
+
 #exportBtn:not(:disabled){
   background:#e5e7eb;
   border-color:#d1d5db;
