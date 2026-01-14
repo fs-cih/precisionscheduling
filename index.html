@@ -100,10 +100,24 @@
     <p class="muted scheduling-note">Visits are always scheduled to comply with the pacing selected in the form. However, visits may not have assigned lessons for one of three reasons: (1) the visit is scheduled during Thanksgiving week, (2) the visit is scheduled during the last two weeks of December, or (3) there are more visits than lessons; these visits are labeled "excess capacity" in the schedule. The default is to always include one lesson per visit; lessons may be doubled-up to ensure that all eligible lessons for a participant are scheduled. It is the responsibility of the home visitor to review the drafted schedule and ensure it meets participant needs.</p>
     <div class="btns">
       <button class="primary" id="generateBtn">Generate Schedule</button>
-      <button id="exportBtn" disabled>Export Schedule as CSV</button>
       <button id="resetBtn" type="button">Reset Form</button>
     </div>
     <div id="status" class="muted status-message"></div>
+  </div>
+
+  <!-- Download & Use Instructions -->
+  <div class="card" id="instructionsCard" style="display:none;">
+    <div class="section-title">Download &amp; Use Instructions</div>
+    <p>This schedule has been generated based on the information you provided and the parameters you selected above. The schedule generated is based on ideal circumstances and does not necessarily align with participant needs, actual schedules, or changes in family dynamics. It is the responsibility of the home visitor to review the drafted schedule and ensure it meets participant needs.</p>
+    <p>In order to download the schedule:</p>
+    <ol>
+      <li>Click the green "Download Schedule as CSV" button.</li>
+      <li>The file downloads to your browser. Save it to your computer.</li>
+      <li>Open the file using the default CSV file reader or right click on the file, click "Open With," and select your preferred file viewer (like Excel).</li>
+    </ol>
+    <div class="btns">
+      <button id="exportBtn" disabled>Download Schedule as CSV</button>
+    </div>
   </div>
 
   <!-- Results -->
