@@ -59,6 +59,32 @@ function isFirstHalfOfDecember(date) {
   return date.getMonth() === 11 && date.getDate() <= 14;
 }
 
+function isOptionalLessonSelected(lesson, topics) {
+  const selections = topics ?? {};
+
+  if (selections.cfw && Boolean(lesson?.caregiverWellbeing)) {
+    return true;
+  }
+
+  if (selections.fp && Boolean(lesson?.familyPlanning)) {
+    return true;
+  }
+
+  if (selections.nutrition && Boolean(lesson?.nutrition)) {
+    return true;
+  }
+
+  if (selections.sti && Boolean(lesson?.sti)) {
+    return true;
+  }
+
+  if (selections.substance && Boolean(lesson?.substanceUse)) {
+    return true;
+  }
+
+  return false;
+}
+
 function canPullLesson(visit, lesson, participantCtx, topics) {
   if (!visit || visit.blocked) {
     return false;
@@ -661,6 +687,8 @@ export function assignLessons(visits, participant, lessons) {
   for (const lesson of lessonsToSchedule) {
     let bestCandidate = null;
     let fallbackCandidate = null;
+    let optionalCandidate = null;
+    const isOptional = isOptionalLessonSelected(lesson, topics);
 
     for (const visit of visitInfos) {
       if (!canPullLesson(visit, lesson, participantCtx, topics)) {
@@ -679,6 +707,10 @@ export function assignLessons(visits, participant, lessons) {
         assignmentCount,
         index: visit.index,
       };
+
+      if (isOptional && isBetterCandidate(candidate, optionalCandidate)) {
+        optionalCandidate = candidate;
+      }
 
       if (assignmentCount < visit.maxSlots) {
         if (isBetterCandidate(candidate, bestCandidate)) {
@@ -707,6 +739,15 @@ export function assignLessons(visits, participant, lessons) {
         visit.autoSlotIncreases += 1;
         bestCandidate = fallbackCandidate;
       }
+    }
+
+    if (!bestCandidate && isOptional && optionalCandidate) {
+      const { visit } = optionalCandidate;
+      if (visit.maxSlots <= visit.assignments.length) {
+        visit.maxSlots = visit.assignments.length + 1;
+        visit.autoSlotIncreases += 1;
+      }
+      bestCandidate = optionalCandidate;
     }
 
     if (!bestCandidate) {
