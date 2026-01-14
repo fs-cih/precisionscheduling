@@ -226,6 +226,16 @@ th{
   align-items:flex-start;
 }
 
+ol{
+  margin:12px 0;
+  padding-left:24px;
+  line-height:1.6;
+}
+
+ol li{
+  margin:8px 0;
+}
+
 .sr{
   position:absolute;
   left:-9999px;

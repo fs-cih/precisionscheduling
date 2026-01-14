@@ -2,6 +2,7 @@ import { fmtDate } from './dates.js';
 
 const scheduleBody = document.getElementById('scheduleBody');
 const resultsCard = document.getElementById('resultsCard');
+const instructionsCard = document.getElementById('instructionsCard');
 const summaryEl = document.getElementById('summary');
 const exportBtn = document.getElementById('exportBtn');
 const logBtn = document.getElementById('logBtn');
@@ -229,6 +230,10 @@ export function updateSchedule(schedule, pid) {
   const shouldShow =
     rows.length > 0 || overflowCount > 0 || removedVisits > 0 || skippedCount > 0;
 
+  if (instructionsCard) {
+    instructionsCard.style.display = shouldShow ? 'block' : 'none';
+  }
+
   if (resultsCard) {
     resultsCard.style.display = shouldShow ? 'block' : 'none';
   }
@@ -258,6 +263,9 @@ export function updateSchedule(schedule, pid) {
 export function clearSchedule() {
   if (scheduleBody) {
     scheduleBody.innerHTML = '';
+  }
+  if (instructionsCard) {
+    instructionsCard.style.display = 'none';
   }
   if (resultsCard) {
     resultsCard.style.display = 'none';
