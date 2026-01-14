@@ -92,7 +92,8 @@ select{
   font-size:12px;
 }
 
-.muted.scheduling-note{
+.muted.scheduling-note,
+.muted.instructions-note{
   font-size:16px;
   line-height:1.6;
 }
