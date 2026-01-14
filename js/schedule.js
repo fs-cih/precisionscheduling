@@ -103,18 +103,7 @@ function buildCsv(rows, pid) {
     'Date Delivered',
     'Notes',
   ];
-  const headerRow2 = [
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-    '',
-  ];
+  const headerRow2 = new Array(headerRow1.length).fill('');
   const lines = [headerRow1.join(','), headerRow2.join(',')];
 
   rows.forEach((row) => {
