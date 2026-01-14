@@ -791,7 +791,7 @@ export function assignLessons(visits, participant, lessons) {
       if (typeof code === 'string') {
         const lesson = lessonsByCode.get(code);
         const seqAge = Number.isFinite(lesson?.seqAge) ? ` (${lesson.seqAge})` : '';
-        const displayText = lesson?.subject ? `${code}: ${lesson.subject}${seqAge}` : code;
+        const displayText = lesson?.subject ? `${code}: ${lesson.subject}${seqAge}` : `${code}${seqAge}`;
         eligibleNotScheduledCodes.add(displayText);
       }
     } else {
@@ -799,7 +799,7 @@ export function assignLessons(visits, participant, lessons) {
       if (typeof code === 'string') {
         const lesson = lessonsByCode.get(code);
         const seqAge = Number.isFinite(lesson?.seqAge) ? ` (${lesson.seqAge})` : '';
-        const displayText = lesson?.subject ? `${code}: ${lesson.subject}${seqAge}` : code;
+        const displayText = lesson?.subject ? `${code}: ${lesson.subject}${seqAge}` : `${code}${seqAge}`;
         notEligibleNotScheduledCodes.add(displayText);
       }
     }
@@ -810,14 +810,14 @@ export function assignLessons(visits, participant, lessons) {
       overflowCount += 1;
       if (typeof finalLesson.code === 'string') {
         const seqAge = Number.isFinite(finalLesson?.seqAge) ? ` (${finalLesson.seqAge})` : '';
-        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}${seqAge}` : finalLesson.code;
+        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}${seqAge}` : `${finalLesson.code}${seqAge}`;
         eligibleNotScheduledCodes.add(displayText);
       }
     } else {
       skippedCount += 1;
       if (typeof finalLesson.code === 'string') {
         const seqAge = Number.isFinite(finalLesson?.seqAge) ? ` (${finalLesson.seqAge})` : '';
-        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}${seqAge}` : finalLesson.code;
+        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}${seqAge}` : `${finalLesson.code}${seqAge}`;
         notEligibleNotScheduledCodes.add(displayText);
       }
     }
