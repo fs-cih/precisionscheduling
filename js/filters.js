@@ -1,5 +1,5 @@
 const YES = 'yes';
-export const AGE_TOLERANCE_MONTHS = 3;
+export const AGE_TOLERANCE_MONTHS = 4;
 const PRENATAL_TOLERANCE_MONTHS = 1;
 
 function toBool(value) {
@@ -57,12 +57,13 @@ export function isLessonRelevant(lesson, participant, topics) {
   return false;
 }
 
-export function shouldPull(lesson, participant, topics, childAgeM) {
+export function shouldPull(lesson, participant, topics, childAgeM, options = {}) {
   if (!isLessonRelevant(lesson, participant, topics)) {
     return false;
   }
 
   const { start, end } = getLessonAgeRange(lesson);
+  const ignoreAgeRange = options?.ignoreAgeRange === true;
   const useTolerance = participant?.pacing === 'standard';
   const foundationCatchUp =
     toBool(lesson?.foundation) &&
@@ -80,6 +81,10 @@ export function shouldPull(lesson, participant, topics, childAgeM) {
     if (!(foundationCatchUp && hasPostBirthVisit)) {
       return false;
     }
+  }
+
+  if (ignoreAgeRange) {
+    return true;
   }
 
   if (Number.isFinite(end)) {

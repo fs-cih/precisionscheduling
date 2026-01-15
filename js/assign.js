@@ -3,6 +3,8 @@ import { AGE_TOLERANCE_MONTHS, getLessonAgeRange, shouldPull } from './filters.j
 
 const ADDITIONAL_LESSON_PENALTY = 5;
 const MAX_AUTO_SLOT_INCREASES_PER_VISIT = 2;
+const OPTIONAL_ASSIGNMENT_PENALTY = 8;
+const OPTIONAL_MINUTES_PENALTY_DIVISOR = 15;
 
 function getLessonMinutes(lesson) {
   return Number.isFinite(lesson?.minutes) ? lesson.minutes : 0;
@@ -90,7 +92,8 @@ function canPullLesson(visit, lesson, participantCtx, topics) {
     return false;
   }
 
-  return shouldPull(lesson, participantCtx, topics, visit.ageM);
+  const ignoreAgeRange = isOptionalLessonSelected(lesson, topics);
+  return shouldPull(lesson, participantCtx, topics, visit.ageM, { ignoreAgeRange });
 }
 
 function canPlaceLesson(visit, lesson, participantCtx, topics) {
@@ -602,7 +605,10 @@ export function assignLessons(visits, participant, lessons) {
     if (!lesson?.code || !prenatalVisits.length) {
       return false;
     }
-    return prenatalVisits.some((visit) => shouldPull(lesson, participantCtx, topics, visit.ageM));
+    const ignoreAgeRange = isOptionalLessonSelected(lesson, topics);
+    return prenatalVisits.some((visit) =>
+      shouldPull(lesson, participantCtx, topics, visit.ageM, { ignoreAgeRange }),
+    );
   }).length;
   const restrictToSingleSlot =
     prenatalVisits.length > 0 && prenatalVisits.length > prenatalEligibleLessonCount;
@@ -619,7 +625,8 @@ export function assignLessons(visits, participant, lessons) {
       if (visit.blocked) {
         continue;
       }
-      if (shouldPull(lesson, participantCtx, topics, visit.ageM)) {
+      const ignoreAgeRange = isOptionalLessonSelected(lesson, topics);
+      if (shouldPull(lesson, participantCtx, topics, visit.ageM, { ignoreAgeRange })) {
         eligibleCodes.add(lesson.code);
         return;
       }
@@ -698,7 +705,11 @@ export function assignLessons(visits, participant, lessons) {
       const score = calculateScore(lesson, visit.ageM);
       const projectedMinutes = visit.totalMinutes + getLessonMinutes(lesson);
       const assignmentCount = visit.assignments.length;
-      const weightedScore = score + assignmentCount * ADDITIONAL_LESSON_PENALTY;
+      const optionalPenalty = isOptional
+        ? assignmentCount * OPTIONAL_ASSIGNMENT_PENALTY + projectedMinutes / OPTIONAL_MINUTES_PENALTY_DIVISOR
+        : 0;
+      const weightedScore =
+        score + assignmentCount * ADDITIONAL_LESSON_PENALTY + optionalPenalty;
       const candidate = {
         visit,
         score,
