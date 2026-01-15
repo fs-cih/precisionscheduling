@@ -133,13 +133,13 @@ button:disabled{
 }
 
 #exportPdfBtn:not(:disabled){
-  background:#22c55e;
-  border-color:#16a34a;
+  background:#2563eb;
+  border-color:#1d4ed8;
   color:#fff;
 }
 
 #exportPdfBtn:not(:disabled):hover{
-  background:#16a34a;
+  background:#1d4ed8;
 }
 
 #exportTextBtn:not(:disabled){
@@ -153,13 +153,13 @@ button:disabled{
 }
 
 #exportBtn:not(:disabled){
-  background:#e5e7eb;
-  border-color:#d1d5db;
-  color:var(--ink);
+  background:#2563eb;
+  border-color:#1d4ed8;
+  color:#fff;
 }
 
 #exportBtn:not(:disabled):hover{
-  background:#d1d5db;
+  background:#1d4ed8;
 }
 
 #resetBtn{
