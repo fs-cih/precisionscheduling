@@ -11,6 +11,16 @@ const exportPdfBtn = document.getElementById('exportPdfBtn');
 const exportTextBtn = document.getElementById('exportTextBtn');
 const exportZipBtn = document.getElementById('exportZipBtn');
 const logBtn = document.getElementById('logBtn');
+const technicalNotesToggle = document.getElementById('technicalNotesToggle');
+const technicalNotesContent = document.getElementById('technicalNotesContent');
+
+// Initialize the collapse toggle
+if (technicalNotesToggle && technicalNotesContent) {
+  technicalNotesToggle.addEventListener('click', () => {
+    const isExpanded = technicalNotesContent.classList.toggle('expanded');
+    technicalNotesToggle.classList.toggle('expanded', isExpanded);
+  });
+}
 
 function resetExport() {
   exportBtn.disabled = true;
@@ -468,4 +478,12 @@ export function clearSchedule() {
   resetTextExport();
   resetZipExport();
   resetLog();
+  
+  // Reset the collapse state
+  if (technicalNotesToggle) {
+    technicalNotesToggle.classList.remove('expanded');
+  }
+  if (technicalNotesContent) {
+    technicalNotesContent.classList.remove('expanded');
+  }
 }
