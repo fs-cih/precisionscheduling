@@ -72,7 +72,7 @@ export function generateTextChecklist(scheduleData, formData) {
     .filter((key) => topics[key])
     .map((key) => topicLabels[key]);
   if (selectedTopics.length) {
-    selectedTopics.forEach((topic) => lines.push(`• ${topic}`));
+    selectedTopics.forEach((topic) => lines.push(` - ${topic}`));
   } else {
     lines.push('None selected');
   }
