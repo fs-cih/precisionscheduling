@@ -163,13 +163,13 @@ button:disabled{
 }
 
 #exportZipBtn:not(:disabled){
-  background:#7dd3fc;
-  border-color:#38bdf8;
-  color:#0f172a;
+  background:var(--brand);
+  border-color:var(--brand);
+  color:#fff;
 }
 
 #exportZipBtn:not(:disabled):hover{
-  background:#38bdf8;
+  background:#0891d1;
 }
 
 #resetBtn{
