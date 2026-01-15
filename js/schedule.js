@@ -274,7 +274,7 @@ export function updateSchedule(schedule, pid, formData = null) {
       exportTextBtn.disabled = false;
       exportTextBtn.onclick = () => {
         const textDoc = generateTextChecklist(schedule, formData);
-        download('precision-schedule-checklist.doc', textDoc, 'application/msword');
+        download('precision-schedule-checklist.doc', textDoc, 'text/html');
       };
     }
   } else {
