@@ -225,6 +225,47 @@ button:disabled{
   align-self:flex-start;
 }
 
+.collapse-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:transparent;
+  border:none;
+  padding:8px 0;
+  color:var(--muted);
+  font-size:14px;
+  cursor:pointer;
+}
+
+.collapse-toggle:hover{
+  color:var(--ink);
+}
+
+.collapse-toggle .arrow{
+  font-size:12px;
+  transition:transform 0.2s ease;
+  display:inline-block;
+}
+
+.collapse-toggle.expanded .arrow{
+  transform:rotate(-180deg);
+}
+
+.collapse-toggle .toggle-text{
+  font-weight:500;
+}
+
+.collapse-content{
+  display:none;
+  flex-direction:column;
+  gap:8px;
+  margin-top:4px;
+}
+
+.collapse-content.expanded{
+  display:flex;
+}
+
 #summary{
   font-size:13px;
   color:#374151;
