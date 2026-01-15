@@ -1,27 +1,30 @@
 import { fmtDate } from './dates.js';
 
 export function generateTextChecklist(scheduleData, formData) {
-  const lines = [];
+  const parts = [];
   const today = new Date();
 
-  const addHeading = (text) => {
-    lines.push(text);
-    lines.push('-'.repeat(text.length));
+  const escapeHtml = (value) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const addSection = (title, content) => {
+    parts.push(`<section class="section"><h2>${escapeHtml(title)}</h2>${content}</section>`);
   };
 
-  const addField = (label, value) => {
-    lines.push(`${label}: ${value || '______'}`);
-  };
-
-  const addBlankLine = () => lines.push('');
-
-  lines.push('Precision Schedule');
-  addBlankLine();
-
-  addHeading('Affiliate Scheduling Information');
-  addField('Date Generated', today.toLocaleDateString());
-  addField('Participant ID', formData.pid);
-  addField('Date of First Lesson', formData.firstLesson ? fmtDate(formData.firstLesson) : '');
+  const addDefinitionList = (items) =>
+    `<dl>${items
+      .map(
+        ({ label, value }) =>
+          `<div class="field"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(
+            value || '______',
+          )}</dd></div>`,
+      )
+      .join('')}</dl>`;
 
   const durationMap = {
     'up_to_3rd_birthday': "Up to youngest child's 3rd birthday",
@@ -29,10 +32,6 @@ export function generateTextChecklist(scheduleData, formData) {
     '6_months': '6 months from first visit',
     '12_months': '12 months from first visit',
   };
-  addField(
-    'Duration of Schedule',
-    durationMap[formData.scheduleDuration] || formData.scheduleDuration,
-  );
 
   let pacingText = formData.pacing === 'standard' ? 'Standard' : 'Defined';
   if (formData.pacing === 'defined' && formData.definedPref) {
@@ -44,22 +43,7 @@ export function generateTextChecklist(scheduleData, formData) {
     };
     pacingText += ` (${prefMap[formData.definedPref] || formData.definedPref})`;
   }
-  addField('Pacing', pacingText);
-  addBlankLine();
 
-  addHeading('Child Information');
-  addField(
-    'Birth or Due Date of Youngest Child',
-    formData.birthDate ? fmtDate(formData.birthDate) : '',
-  );
-  addBlankLine();
-
-  addHeading('Participant (Primary Adult) Information');
-  addField('Participant is First-Time Parent', formData.isFirstTimeParent ? 'Yes' : 'No');
-  addField('Is the Participant Pregnant', formData.isPregnant ? 'Yes' : 'No');
-  addBlankLine();
-
-  addHeading('Topics of Interest to Family');
   const topics = formData.topics || {};
   const topicLabels = {
     cfw: 'Caregiver & Family Wellbeing',
@@ -71,14 +55,69 @@ export function generateTextChecklist(scheduleData, formData) {
   const selectedTopics = Object.keys(topicLabels)
     .filter((key) => topics[key])
     .map((key) => topicLabels[key]);
-  if (selectedTopics.length) {
-    selectedTopics.forEach((topic) => lines.push(` - ${topic}`));
-  } else {
-    lines.push('None selected');
-  }
-  addBlankLine();
 
-  addHeading('Schedule');
+  parts.push(`
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Precision Schedule Checklist</title>
+    <style>
+      body { font-family: "Segoe UI", Arial, sans-serif; color: #1a1a1a; margin: 32px; }
+      h1 { font-size: 24px; margin-bottom: 8px; }
+      h2 { font-size: 18px; margin: 24px 0 8px; border-bottom: 2px solid #1a1a1a; padding-bottom: 4px; }
+      .field { display: grid; grid-template-columns: 220px 1fr; gap: 12px; margin-bottom: 6px; }
+      dt { font-weight: 600; }
+      dd { margin: 0; }
+      ul { margin: 0 0 0 18px; }
+      .visit { margin-top: 16px; }
+      .visit h3 { font-size: 16px; margin: 12px 0 6px; }
+      .notes { margin-top: 8px; }
+      .line { display: inline-block; min-width: 240px; border-bottom: 1px solid #333; }
+    </style>
+  </head>
+  <body>
+    <h1>Precision Schedule</h1>
+  `);
+
+  addSection(
+    'Affiliate Scheduling Information',
+    addDefinitionList([
+      { label: 'Date Generated', value: today.toLocaleDateString() },
+      { label: 'Participant ID', value: formData.pid },
+      { label: 'Date of First Lesson', value: formData.firstLesson ? fmtDate(formData.firstLesson) : '' },
+      {
+        label: 'Duration of Schedule',
+        value: durationMap[formData.scheduleDuration] || formData.scheduleDuration,
+      },
+      { label: 'Pacing', value: pacingText },
+    ]),
+  );
+
+  addSection(
+    'Child Information',
+    addDefinitionList([
+      {
+        label: 'Birth or Due Date of Youngest Child',
+        value: formData.birthDate ? fmtDate(formData.birthDate) : '',
+      },
+    ]),
+  );
+
+  addSection(
+    'Participant (Primary Adult) Information',
+    addDefinitionList([
+      { label: 'Participant is First-Time Parent', value: formData.isFirstTimeParent ? 'Yes' : 'No' },
+      { label: 'Is the Participant Pregnant', value: formData.isPregnant ? 'Yes' : 'No' },
+    ]),
+  );
+
+  addSection(
+    'Topics of Interest to Family',
+    selectedTopics.length
+      ? `<ul>${selectedTopics.map((topic) => `<li>${escapeHtml(topic)}</li>`).join('')}</ul>`
+      : '<p>None selected</p>',
+  );
 
   const rows = scheduleData.rows || [];
   const visitGroups = new Map();
@@ -90,19 +129,32 @@ export function generateTextChecklist(scheduleData, formData) {
     visitGroups.get(row.visit).push(row);
   });
 
+  const scheduleHtml = [];
   visitGroups.forEach((visitRows, visitNum) => {
-    addBlankLine();
-    lines.push(`Visit ${visitNum} - ${fmtDate(visitRows[0].date)}`);
-    visitRows.forEach((row) => {
-      const lessonText = row.placeholder ? row.subject : `${row.code}: ${row.subject}`;
-      lines.push(`- ${lessonText}`);
-    });
-    addBlankLine();
-    lines.push('Date Delivered: _______________');
-    lines.push('Notes:');
-    lines.push('');
-    lines.push('');
+    const lessons = visitRows
+      .map((row) => {
+        const lessonText = row.placeholder ? row.subject : `${row.code}: ${row.subject}`;
+        return `<li>${escapeHtml(lessonText)}</li>`;
+      })
+      .join('');
+    scheduleHtml.push(`
+      <div class="visit">
+        <h3>Visit ${escapeHtml(visitNum)} - ${escapeHtml(fmtDate(visitRows[0].date))}</h3>
+        <ul>${lessons}</ul>
+        <p class="notes">Date Delivered: <span class="line">&nbsp;</span></p>
+        <p class="notes">Notes:</p>
+        <p class="notes"><span class="line" style="width: 100%">&nbsp;</span></p>
+        <p class="notes"><span class="line" style="width: 100%">&nbsp;</span></p>
+      </div>
+    `);
   });
 
-  return lines.join('\n');
+  addSection('Schedule', scheduleHtml.join(''));
+
+  parts.push(`
+  </body>
+</html>
+  `);
+
+  return parts.join('');
 }
