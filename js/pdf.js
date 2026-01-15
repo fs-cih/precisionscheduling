@@ -123,7 +123,7 @@ export function generatePdfChecklist(scheduleData, formData) {
 
   if (selectedTopics.length > 0) {
     selectedTopics.forEach(topic => {
-      doc.text(`• ${topic}`, margin + 5, yPos);
+      doc.text(` - ${topic}`, margin + 5, yPos);
       advanceLine();
     });
   } else {
