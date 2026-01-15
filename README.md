@@ -21,4 +21,4 @@ Open `index.html` in a browser or serve the directory with a static file server 
 
 ### Age tolerance logic
 
-Participants scheduled with the standard (non-"appropriate") priority can now receive lessons up to three months before a lesson's recommended starting age. The same three month tolerance is used by the scoring logic so that visits in this early window are treated as on time while still applying steep penalties to lessons scheduled more than three months early or late. This helps ensure the initial visits populate with lessons immediately after birth in realistic scenarios.
+Participants scheduled with the standard (non-"appropriate") priority can now receive lessons up to four months before a lesson's recommended starting age. The same four month tolerance is used by the scoring logic so that visits in this early window are treated as on time while still applying steep penalties to lessons scheduled more than four months early or late. This helps ensure the initial visits populate with lessons immediately after birth in realistic scenarios.
