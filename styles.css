@@ -162,6 +162,16 @@ button:disabled{
   background:#1d4ed8;
 }
 
+#exportZipBtn:not(:disabled){
+  background:#7dd3fc;
+  border-color:#38bdf8;
+  color:#0f172a;
+}
+
+#exportZipBtn:not(:disabled):hover{
+  background:#38bdf8;
+}
+
 #resetBtn{
   background:#800000;
   border-color:#6b0000;
