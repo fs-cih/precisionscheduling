@@ -9,6 +9,7 @@ const summaryEl = document.getElementById('summary');
 const exportBtn = document.getElementById('exportBtn');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
 const exportTextBtn = document.getElementById('exportTextBtn');
+const exportZipBtn = document.getElementById('exportZipBtn');
 const logBtn = document.getElementById('logBtn');
 
 function resetExport() {
@@ -32,6 +33,14 @@ function resetTextExport() {
   exportTextBtn.onclick = null;
 }
 
+function resetZipExport() {
+  if (!exportZipBtn) {
+    return;
+  }
+  exportZipBtn.disabled = true;
+  exportZipBtn.onclick = null;
+}
+
 function resetLog() {
   if (!logBtn) {
     return;
@@ -43,6 +52,16 @@ function resetLog() {
 function download(filename, text, mimeType = 'text/plain') {
   const blob = new Blob([text], { type: mimeType });
   const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadBlob(filename, blob, mimeType = 'application/octet-stream') {
+  const resolvedBlob = blob instanceof Blob ? blob : new Blob([blob], { type: mimeType });
+  const url = URL.createObjectURL(resolvedBlob);
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = filename;
@@ -152,10 +171,122 @@ function escapeHtml(value) {
   if (typeof value !== 'string') {
     return value ?? '';
   }
-  
+
   const div = document.createElement('div');
   div.textContent = value;
   return div.innerHTML;
+}
+
+const textEncoder = new TextEncoder();
+const crcTable = (() => {
+  const table = new Uint32Array(256);
+  for (let i = 0; i < 256; i += 1) {
+    let crc = i;
+    for (let j = 0; j < 8; j += 1) {
+      crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
+    }
+    table[i] = crc >>> 0;
+  }
+  return table;
+})();
+
+function toUint8(data) {
+  if (data instanceof Uint8Array) {
+    return data;
+  }
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data);
+  }
+  if (typeof data === 'string') {
+    return textEncoder.encode(data);
+  }
+  return new Uint8Array();
+}
+
+function crc32(data) {
+  let crc = 0xffffffff;
+  data.forEach((byte) => {
+    crc = (crc >>> 8) ^ crcTable[(crc ^ byte) & 0xff];
+  });
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function concatUint8(chunks) {
+  const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const output = new Uint8Array(total);
+  let offset = 0;
+  chunks.forEach((chunk) => {
+    output.set(chunk, offset);
+    offset += chunk.length;
+  });
+  return output;
+}
+
+function buildZip(files) {
+  let offset = 0;
+  const localChunks = [];
+  const centralChunks = [];
+
+  files.forEach((file) => {
+    const nameBytes = textEncoder.encode(file.name);
+    const data = toUint8(file.data);
+    const crc = crc32(data);
+    const localHeader = new ArrayBuffer(30 + nameBytes.length);
+    const localView = new DataView(localHeader);
+    localView.setUint32(0, 0x04034b50, true);
+    localView.setUint16(4, 20, true);
+    localView.setUint16(6, 0, true);
+    localView.setUint16(8, 0, true);
+    localView.setUint16(10, 0, true);
+    localView.setUint16(12, 0, true);
+    localView.setUint32(14, crc, true);
+    localView.setUint32(18, data.length, true);
+    localView.setUint32(22, data.length, true);
+    localView.setUint16(26, nameBytes.length, true);
+    localView.setUint16(28, 0, true);
+    new Uint8Array(localHeader, 30).set(nameBytes);
+
+    const localHeaderBytes = new Uint8Array(localHeader);
+    localChunks.push(localHeaderBytes, data);
+
+    const centralHeader = new ArrayBuffer(46 + nameBytes.length);
+    const centralView = new DataView(centralHeader);
+    centralView.setUint32(0, 0x02014b50, true);
+    centralView.setUint16(4, 20, true);
+    centralView.setUint16(6, 20, true);
+    centralView.setUint16(8, 0, true);
+    centralView.setUint16(10, 0, true);
+    centralView.setUint16(12, 0, true);
+    centralView.setUint16(14, 0, true);
+    centralView.setUint32(16, crc, true);
+    centralView.setUint32(20, data.length, true);
+    centralView.setUint32(24, data.length, true);
+    centralView.setUint16(28, nameBytes.length, true);
+    centralView.setUint16(30, 0, true);
+    centralView.setUint16(32, 0, true);
+    centralView.setUint16(34, 0, true);
+    centralView.setUint16(36, 0, true);
+    centralView.setUint32(38, 0, true);
+    centralView.setUint32(42, offset, true);
+    new Uint8Array(centralHeader, 46).set(nameBytes);
+
+    centralChunks.push(new Uint8Array(centralHeader));
+    offset += localHeaderBytes.length + data.length;
+  });
+
+  const centralDir = concatUint8(centralChunks);
+  const endRecord = new ArrayBuffer(22);
+  const endView = new DataView(endRecord);
+  endView.setUint32(0, 0x06054b50, true);
+  endView.setUint16(4, 0, true);
+  endView.setUint16(6, 0, true);
+  endView.setUint16(8, files.length, true);
+  endView.setUint16(10, files.length, true);
+  endView.setUint32(12, centralDir.length, true);
+  endView.setUint32(16, offset, true);
+  endView.setUint16(20, 0, true);
+
+  return concatUint8([...localChunks, centralDir, new Uint8Array(endRecord)]);
 }
 
 function buildLogCsv(eligibleScheduled, eligibleNotScheduled, notEligibleNotScheduled) {
@@ -277,10 +408,29 @@ export function updateSchedule(schedule, pid, formData = null) {
         download('precision-schedule-checklist.doc', textDoc, 'text/html');
       };
     }
+
+    if (exportZipBtn && formData) {
+      exportZipBtn.disabled = false;
+      exportZipBtn.onclick = () => {
+        const pdfDoc = generatePdfChecklist(schedule, formData);
+        const pdfBytes = pdfDoc.output('arraybuffer');
+        const textDoc = generateTextChecklist(schedule, formData);
+        const csvDoc = buildCsv(rows, pid);
+        const zipBytes = buildZip([
+          { name: 'precision-schedule-checklist.pdf', data: pdfBytes },
+          { name: 'precision-schedule-checklist.doc', data: textDoc },
+          { name: 'schedule.csv', data: csvDoc },
+        ]);
+        downloadBlob('precision-schedule-files.zip', zipBytes, 'application/zip');
+      };
+    } else if (exportZipBtn) {
+      resetZipExport();
+    }
   } else {
     resetExport();
     resetPdfExport();
     resetTextExport();
+    resetZipExport();
   }
 
   if (logBtn) {
@@ -316,5 +466,6 @@ export function clearSchedule() {
   }
   resetPdfExport();
   resetTextExport();
+  resetZipExport();
   resetLog();
 }
