@@ -357,14 +357,14 @@ export function updateSchedule(schedule, pid, formData = null) {
   }
 
   if (overflowCount > 0) {
-    summaryLines.push(`Lessons not scheduled due to visit capacity: ${overflowCount}`);
+    summaryLines.push(`Lessons not scheduled due to visit capacity (standard sequence age noted): ${overflowCount}`);
     if (eligibleNotScheduled.length > 0) {
       summaryLines.push(`<ul>${eligibleNotScheduled.map((code) => `<li>${escapeHtml(code)}</li>`).join('')}</ul>`);
     }
   }
 
   if (skippedCount > 0) {
-    summaryLines.push(`Some selected parameters exclude these potential lessons: ${skippedCount}`);
+    summaryLines.push(`Some selected parameters exclude these potential lessons (standard sequence age noted): ${skippedCount}`);
     if (notEligibleNotScheduled.length > 0) {
       summaryLines.push(`<ul>${notEligibleNotScheduled.map((code) => `<li>${escapeHtml(code)}</li>`).join('')}</ul>`);
     }
