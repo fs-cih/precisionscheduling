@@ -141,7 +141,7 @@ function renderRows(rows) {
 }
 
 function buildCsv(rows, pid) {
-  const header = [
+  const headerRow1 = [
     'Participant ID',
     'Visit #',
     'Visit Date',
@@ -153,7 +153,8 @@ function buildCsv(rows, pid) {
     'Date Delivered',
     'Notes',
   ];
-  const lines = [header.join(',')];
+  const headerRow2 = new Array(headerRow1.length).fill('');
+  const lines = [headerRow1.join(','), headerRow2.join(',')];
 
   rows.forEach((row) => {
     const age = row.ageM < 0 ? 'Prenatal' : row.ageM;
