@@ -64,7 +64,7 @@ export function shouldPull(lesson, participant, topics, childAgeM, options = {})
 
   const { start, end } = getLessonAgeRange(lesson);
   const ignoreAgeRange = options?.ignoreAgeRange === true;
-  const useTolerance = participant?.pacing === 'standard';
+  const useTolerance = true;
   const foundationCatchUp =
     toBool(lesson?.foundation) &&
     Number.isFinite(lesson?.seqAge) &&
