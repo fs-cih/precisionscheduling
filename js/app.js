@@ -1,6 +1,5 @@
 import { initUI, readSelections, resetForm, setStatus } from './ui.js';
 import { generateVisits } from './pacing.js';
-import { filterLessons } from './filters.js';
 import { assignLessons } from './assign.js';
 import { clearSchedule, updateSchedule } from './schedule.js';
 import { getLessons } from './lessons.js';
@@ -32,8 +31,7 @@ async function handleGenerate() {
       topics: selection.topics,
       completedLessons: selection.completedLessons,
     };
-    const queue = filterLessons(lessons, participant);
-    const schedule = assignLessons(visits, participant, queue);
+    const schedule = assignLessons(visits, participant, lessons);
 
     // Prepare form data for PDF generation
     const formData = {
