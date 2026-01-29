@@ -1,5 +1,11 @@
 import { monthsBetween } from './dates.js';
-import { AGE_TOLERANCE_MONTHS, getLessonAgeRange, shouldPull } from './filters.js';
+import {
+  AGE_TOLERANCE_MONTHS,
+  filterLessons,
+  getLessonAgeRange,
+  isLessonRelevant,
+  shouldPull,
+} from './filters.js';
 
 const ADDITIONAL_LESSON_PENALTY = 5;
 const MAX_AUTO_SLOT_INCREASES_PER_VISIT = 2;
@@ -8,6 +14,26 @@ const OPTIONAL_MINUTES_PENALTY_DIVISOR = 15;
 
 function getLessonMinutes(lesson) {
   return Number.isFinite(lesson?.minutes) ? lesson.minutes : 0;
+}
+
+function hasOptionalTopic(lesson) {
+  return Boolean(
+    lesson?.caregiverWellbeing ||
+      lesson?.familyPlanning ||
+      lesson?.nutrition ||
+      lesson?.sti ||
+      lesson?.substanceUse,
+  );
+}
+
+function formatLessonDisplay(lesson, suffix = '', fallbackCode = '') {
+  const code = lesson?.code ?? fallbackCode;
+  if (!code) {
+    return '';
+  }
+  const seqAge = Number.isFinite(lesson?.seqAge) ? ` (${lesson.seqAge})` : '';
+  const base = lesson?.subject ? `${code}: ${lesson.subject}${seqAge}` : `${code}${seqAge}`;
+  return suffix ? `${base}${suffix}` : base;
 }
 
 function getDaysInMonth(year, month) {
@@ -567,7 +593,8 @@ function isBetterCandidate(candidate, currentBest) {
 
 export function assignLessons(visits, participant, lessons) {
   const rows = [];
-  const lessonPool = Array.isArray(lessons) ? [...lessons] : [];
+  const allLessons = Array.isArray(lessons) ? [...lessons] : [];
+  const lessonPool = filterLessons(allLessons, participant);
 
   const lessonsByCode = new Map(
     lessonPool.filter((lesson) => typeof lesson?.code === 'string').map((lesson) => [lesson.code, lesson]),
@@ -599,6 +626,22 @@ export function assignLessons(visits, participant, lessons) {
     activeVisits.length > 0 ? Math.min(...activeVisits.map((visit) => visit.ageM)) : null;
   const participantCtx = { ...participant, firstVisitAgeM };
   const topics = participantCtx?.topics ?? {};
+  const completedLessons = new Set(
+    Array.isArray(participant?.completedLessons)
+      ? participant.completedLessons.filter((code) => typeof code === 'string' && code.trim() !== '')
+      : [],
+  );
+  const optionalNotSelectedLessons = allLessons.filter((lesson) => {
+    if (!lesson?.code || completedLessons.has(lesson.code)) {
+      return false;
+    }
+
+    if (!hasOptionalTopic(lesson)) {
+      return false;
+    }
+
+    return !isLessonRelevant(lesson, participantCtx, topics);
+  });
 
   const prenatalVisits = activeVisits.filter((visit) => visit.ageM < 0);
   const prenatalEligibleLessonCount = lessonPool.filter((lesson) => {
@@ -842,17 +885,19 @@ export function assignLessons(visits, participant, lessons) {
       overflowCount += 1;
       if (typeof code === 'string') {
         const lesson = lessonsByCode.get(code);
-        const seqAge = Number.isFinite(lesson?.seqAge) ? ` (${lesson.seqAge})` : '';
-        const displayText = lesson?.subject ? `${code}: ${lesson.subject}${seqAge}` : `${code}${seqAge}`;
-        eligibleNotScheduledCodes.add(displayText);
+        const displayText = formatLessonDisplay(lesson, '', code);
+        if (displayText) {
+          eligibleNotScheduledCodes.add(displayText);
+        }
       }
     } else {
       skippedCount += 1;
       if (typeof code === 'string') {
         const lesson = lessonsByCode.get(code);
-        const seqAge = Number.isFinite(lesson?.seqAge) ? ` (${lesson.seqAge})` : '';
-        const displayText = lesson?.subject ? `${code}: ${lesson.subject}${seqAge}` : `${code}${seqAge}`;
-        notEligibleNotScheduledCodes.add(displayText);
+        const displayText = formatLessonDisplay(lesson, '', code);
+        if (displayText) {
+          notEligibleNotScheduledCodes.add(displayText);
+        }
       }
     }
   }
@@ -861,17 +906,28 @@ export function assignLessons(visits, participant, lessons) {
     if (eligibleCodes.has(finalLesson.code)) {
       overflowCount += 1;
       if (typeof finalLesson.code === 'string') {
-        const seqAge = Number.isFinite(finalLesson?.seqAge) ? ` (${finalLesson.seqAge})` : '';
-        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}${seqAge}` : `${finalLesson.code}${seqAge}`;
-        eligibleNotScheduledCodes.add(displayText);
+        const displayText = formatLessonDisplay(finalLesson, '', finalLesson.code);
+        if (displayText) {
+          eligibleNotScheduledCodes.add(displayText);
+        }
       }
     } else {
       skippedCount += 1;
       if (typeof finalLesson.code === 'string') {
-        const seqAge = Number.isFinite(finalLesson?.seqAge) ? ` (${finalLesson.seqAge})` : '';
-        const displayText = finalLesson.subject ? `${finalLesson.code}: ${finalLesson.subject}${seqAge}` : `${finalLesson.code}${seqAge}`;
-        notEligibleNotScheduledCodes.add(displayText);
+        const displayText = formatLessonDisplay(finalLesson, '', finalLesson.code);
+        if (displayText) {
+          notEligibleNotScheduledCodes.add(displayText);
+        }
       }
+    }
+  }
+
+  const optionalSuffix = ' (optional topic not selected)';
+  for (const lesson of optionalNotSelectedLessons) {
+    const displayText = formatLessonDisplay(lesson, optionalSuffix);
+    if (!notEligibleNotScheduledCodes.has(displayText)) {
+      notEligibleNotScheduledCodes.add(displayText);
+      skippedCount += 1;
     }
   }
 
