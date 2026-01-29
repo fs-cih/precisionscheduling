@@ -315,7 +315,7 @@ function buildLogCsv(eligibleScheduled, eligibleNotScheduled, notEligibleNotSche
     eligibleNotScheduled.length,
     notEligibleNotScheduled.length,
   );
-  const lines = [header.join(',')];
+  const lines = [header.map(escapeCsv).join(',')];
 
   for (let index = 0; index < maxLength; index += 1) {
     const row = [
