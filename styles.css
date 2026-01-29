@@ -292,6 +292,10 @@ th{
   z-index:1;
 }
 
+tr.visit-even{
+  background:#f9fafb;
+}
+
 .pill{
   background:#f1f5f9;
   border:1px solid var(--line);

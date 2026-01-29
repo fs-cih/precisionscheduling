@@ -114,6 +114,11 @@ function renderRows(rows) {
     visitTotal = currentVisit === row.visit ? visitTotal + row.minutes : row.minutes;
     currentVisit = row.visit;
 
+    // Apply alternating background color based on visit number
+    if (row.visit % 2 === 0) {
+      tr.classList.add('visit-even');
+    }
+
     const tdVisit = document.createElement('td');
     tdVisit.textContent = row.visit;
     const tdDate = document.createElement('td');
