@@ -307,8 +307,8 @@ function buildZip(files) {
 function buildLogCsv(eligibleScheduled, eligibleNotScheduled, notEligibleNotScheduled) {
   const header = [
     'Eligible Scheduled',
-    'Eligible Not Scheduled',
-    'Not Eligible Not Scheduled',
+    'Lessons not scheduled due to visit capacity (standard sequence age noted)',
+    'Some selected parameters exclude these potential lessons (standard sequence age noted)',
   ];
   const maxLength = Math.max(
     eligibleScheduled.length,
